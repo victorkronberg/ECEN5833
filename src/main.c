@@ -77,7 +77,6 @@ int main(void)
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
   // gecko_init(&config);
-  
   /* Infinite loop */
   while (1) {
 	  delayApproxOneSecond();
