@@ -46,4 +46,6 @@
 #define MAX_CONNECTIONS 4
 #endif
 
+#define EnergyMode3	(1)
+
 #endif /* SRC_MAIN_H_ */

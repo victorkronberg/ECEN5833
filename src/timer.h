@@ -40,11 +40,16 @@
 
 typedef struct {
 	uint32_t 		led_status;			// LED on/off-status
+	uint32_t		clock_frequency;	// Frequency of LETIMER clock
+	uint32_t		LFA_prescaler;		//
 	uint16_t		LED_on_time;		// Time (in sec) that LED is on
 	uint16_t		LED_off_time;		// Time (in sec) of LED blink period
 } LED_timer_TypeDef;
 
 void init_timer_interrupt(void);
+void init_lfxo(void);
+void init_ulfrco(void);
+void init_letimer(void);
 void calculate_led_timer(LED_timer_TypeDef *led_timer_struct);
 
 #endif /* SRC_TIMER_H_ */

@@ -16,7 +16,24 @@ void init_timer_interrupt(void)
 	gpioLed0SetOff();
 	led_timer.led_status = 0;
 
+	// LFXO only required if not entering EM3
+#ifndef EnergyMode3
+	init_lfxo();
+	led_timer.clock_frequency = 32768;
+	led_timer.LFA_prescaler = 4;
+#else
+	led_timer.clock_frequency = 1000;
+	led_timer.LFA_prescaler = 1;
+#endif
 
+	init_letimer();
+
+	return;
+
+}
+
+void init_lfxo(void)
+{
 	// Enable LFXO oscillator:
 	/* 1 - Asserts that LXFO is not used for HF clock
 	 * 2 - Sets LXFO config registers
@@ -28,18 +45,27 @@ void init_timer_interrupt(void)
 	// Enable LXFO - wait for oscillator to stabilize
 	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
 
+	return;
+}
+
+
+void init_letimer(void)
+{
 	// Enables LFA
 	CMU_ClockEnable(cmuClock_LFA,true);
 
-
+#ifdef EnergyMode3
+	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_ULFRCO);
+#else
 	// Select LXFO oscillator for LFA clock branch
 	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
 
-	// Enable LETIMER0
-	CMU_ClockEnable(cmuClock_LETIMER0, true);
-
 	// Divide LETIMER by 4 - 8192Hz
 	CMU_ClockPrescSet(cmuClock_LETIMER0,cmuClkDiv_4);
+#endif
+
+	// Enable LETIMER0
+	CMU_ClockEnable(cmuClock_LETIMER0, true);
 
 	// Configure LETIMER0
 	LETIMER_Init_TypeDef init = LETIMER_LED_Init;
@@ -59,15 +85,16 @@ void init_timer_interrupt(void)
 	// Enable LETIMER0
 	LETIMER_Enable(LETIMER0, true);
 
+	return;
 }
 
 void calculate_led_timer(LED_timer_TypeDef *led_timer_struct)
 {
 
-	led_timer_struct->LED_on_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME(LEDOnTime,32768,4);
-	// Number of ticks required = LEDOnTime * 32768
+	led_timer_struct->LED_on_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME(LEDOnTime,led_timer.clock_frequency,led_timer.LFA_prescaler);
+	// Number of ticks required = LEDOnTime * clock frequency
 	// Each register can hold 65536 ticks
-	led_timer_struct->LED_off_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME((LEDBlinkPeriod - LEDOnTime),32768,4);
+	led_timer_struct->LED_off_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME((LEDBlinkPeriod - LEDOnTime),led_timer.clock_frequency,led_timer.LFA_prescaler);
 
 }
 
