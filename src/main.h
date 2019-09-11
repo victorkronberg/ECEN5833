@@ -36,6 +36,7 @@
 #include "em_device.h"
 #include "em_chip.h"
 #include "gpio.h"
+#include "sleep.h"
 
 /* User files */
 #include "timer.h"

@@ -5,6 +5,7 @@
 #include "main.h"
 
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
+const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM4;
 
 // Gecko configuration parameters (see gecko_configuration.h)
 static const gecko_configuration_t config = {
@@ -31,7 +32,8 @@ static void delayApproxOneSecond(void)
 	 * We'll discuss how to do this a better way in the next assignment.
 	 */
 	volatile int i;
-	for (i = 0; i < 3500000; ) {
+	i=0;
+	for (i = 0; i < 350000; ) {
 		  i=i+1;
 	}
 }
@@ -50,20 +52,28 @@ int main(void)
 
   init_timer_interrupt();
 
+
+
+  //SLEEP_SleepBlockBegin(blocked_sleep_mode);
+
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
   // gecko_init(&config);
   /* Infinite loop */
   while (1) {
-	  delayApproxOneSecond();
+	  EMU_EnterEM3(false);
+	  //SLEEP_Sleep();
+	  //delayApproxOneSecond();
+	  /*
 	  gpioLed0SetOff();
 
-	  delayApproxOneSecond();
+
 	  gpioLed1SetOff();
 
 	  delayApproxOneSecond();
 	  gpioLed1SetOn();
 	  gpioLed0SetOn();
+	  */
 
   }
 }
