@@ -23,6 +23,7 @@ uint32_t loggerGetTimestamp(void)
  * Initialize logging for Blue Gecko.
  * See https://www.silabs.com/community/wireless/bluetooth/forum.topic.html/how_to_do_uart_loggi-ByI
  */
+#if INCLUDE_LOGGING
 void logInit(void)
 {
 	RETARGET_SerialInit();
@@ -33,3 +34,4 @@ void logInit(void)
 	RETARGET_SerialCrLf(true);
 	LOG_INFO("Initialized Logging");
 }
+#endif
