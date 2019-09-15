@@ -96,11 +96,14 @@ void LETIMER0_IRQHandler(void)
 {
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_UF);
 
-	 // Acknowledge the interrupt
-	 uint32_t flags = LETIMER_IntGet(LETIMER0);
-	 LETIMER_IntClear(LETIMER0, flags);
+	// Acknowledge the interrupt
+	uint32_t flags = LETIMER_IntGet(LETIMER0);
+	LETIMER_IntClear(LETIMER0, flags);
 
 	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+
+	// Set bit for timer
+	event_bitmask |= 1;
 
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
 

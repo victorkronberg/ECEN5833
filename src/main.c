@@ -5,6 +5,7 @@
 #include "main.h"
 
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
+uint32_t event_bitmask;
 
 
 #ifdef	EnergyMode3
@@ -86,6 +87,11 @@ int main(void)
 	  else
 	  {
 		  // Take a temperature measurement
+		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
+		  {
+			  // Handle timer event
+
+		  }
 	  }
 
   }

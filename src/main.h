@@ -42,6 +42,8 @@
 #include "timer.h"
 #include "errors.h"
 #include "log.h"
+#include "i2c.h"
+#include "Si7021.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4
@@ -49,6 +51,10 @@
 
 #define EnergyMode1	(1)
 
-uint32_t event_bitmask;
+// Event bitmasks
+#define TIMER_EVENT_MASK		(0x0001)
+#define TIMER_EVENT_MASK_POS	(0)
+
+extern uint32_t event_bitmask;
 
 #endif /* SRC_MAIN_H_ */

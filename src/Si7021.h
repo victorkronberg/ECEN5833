@@ -8,6 +8,6 @@
 #ifndef SRC_SI7021_H_
 #define SRC_SI7021_H_
 
-
+#include "main.h"
 
 #endif /* SRC_SI7021_H_ */
