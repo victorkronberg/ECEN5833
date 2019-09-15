@@ -56,14 +56,20 @@ int main(void)
   // Initialize application
   initApp();
 
+  // Initialize logging
+  logInit();
+
+  // Initialize event flag
+  event_bitmask = 0;
+
+  // Initialize GPIO
   gpioInit();
 
+  // Initialize timer
   init_timer_interrupt();
 
-
-#ifndef	EnergyMode0
+  // Set deepest sleep mode
   SLEEP_SleepBlockBegin(blocked_sleep_mode);
-#endif
 
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
@@ -71,21 +77,16 @@ int main(void)
   /* Infinite loop */
   while (1) {
 
-#if	defined(EnergyMode3) || defined(EnergyMode2) || defined(EnergyMode1)
-	  SLEEP_Sleep();
-#else
-	  delayApproxOneSecond();
-#endif
-	  /*
-	  gpioLed0SetOff();
 
-
-	  gpioLed1SetOff();
-
-	  delayApproxOneSecond();
-	  gpioLed1SetOn();
-	  gpioLed0SetOn();
-	  */
+	  // Check for event on wake
+	  if(event_bitmask == 0)
+	  {
+		  SLEEP_Sleep();
+	  }
+	  else
+	  {
+		  // Take a temperature measurement
+	  }
 
   }
 }

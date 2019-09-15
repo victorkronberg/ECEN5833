@@ -7,26 +7,21 @@
 
 #include "timer.h"
 
-LED_timer_TypeDef led_timer;
+Timer_TypeDef letimer_struct;
 
 
 
 void init_timer_interrupt(void)
 {
-	gpioLed0SetOff();
-	led_timer.led_status = 0;
 
-	// LFXO only required if not entering EM3
-#ifndef EnergyMode3
+
 	init_lfxo();
-	led_timer.clock_frequency = 32768;
-	led_timer.LFA_prescaler = 4;
-#else
-	led_timer.clock_frequency = 1000;
-	led_timer.LFA_prescaler = 1;
-#endif
 
-	init_letimer();
+	letimer_struct.osc_frequency = 32768;
+	letimer_struct.LFA_prescaler = cmuClkDiv_4;
+	letimer_struct.period_in_ms = TimerPeriod;
+
+	init_letimer(&letimer_struct);
 
 	return;
 
@@ -49,7 +44,7 @@ void init_lfxo(void)
 }
 
 
-void init_letimer(void)
+void init_letimer(Timer_TypeDef *timer_struct)
 {
 	// Enables LFA
 	CMU_ClockEnable(cmuClock_LFA,true);
@@ -61,22 +56,22 @@ void init_letimer(void)
 	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
 
 	// Divide LETIMER by 4 - 8192Hz
-	CMU_ClockPrescSet(cmuClock_LETIMER0,cmuClkDiv_4);
+	CMU_ClockPrescSet(cmuClock_LETIMER0,timer_struct->LFA_prescaler);
 #endif
 
 	// Enable LETIMER0
 	CMU_ClockEnable(cmuClock_LETIMER0, true);
 
 	// Configure LETIMER0
-	LETIMER_Init_TypeDef init = LETIMER_LED_Init;
+	LETIMER_Init_TypeDef init = LETIMER_TEMP_INIT;
 
 	// Initialize LETIMER w/ defaults - Set compare registers prior to initialization when starting timer from initialization
 	LETIMER_Init(LETIMER0,&init);
 
-	calculate_led_timer(&led_timer);
+	calculate_timer(timer_struct);
 
 	// Pre-load Compare registers
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,led_timer.LED_on_time);
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_struct->timer_period);
 
 	// Enable LETIMER Interrupts on repeat
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
@@ -88,13 +83,12 @@ void init_letimer(void)
 	return;
 }
 
-void calculate_led_timer(LED_timer_TypeDef *led_timer_struct)
+void calculate_timer(Timer_TypeDef *timer_struct)
 {
 
-	led_timer_struct->LED_on_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME(LEDOnTime,led_timer.clock_frequency,led_timer.LFA_prescaler);
-	// Number of ticks required = LEDOnTime * clock frequency
+	// Number of ticks required = OnTime * clock frequency
 	// Each register can hold 65536 ticks
-	led_timer_struct->LED_off_time = LETIMER_COMPARE_REG_VALUE_FROM_TIME((LEDBlinkPeriod - LEDOnTime),led_timer.clock_frequency,led_timer.LFA_prescaler);
+	timer_struct->timer_period = LETIMER_COMPARE_REG_VALUE_FROM_MS(timer_struct->period_in_ms,timer_struct->osc_frequency,timer_struct->LFA_prescaler);
 
 }
 
@@ -106,19 +100,7 @@ void LETIMER0_IRQHandler(void)
 	 uint32_t flags = LETIMER_IntGet(LETIMER0);
 	 LETIMER_IntClear(LETIMER0, flags);
 
-	//Toggle LED
-	if(led_timer.led_status ==0)
-	{
-		gpioLed0SetOn();
-		LETIMER_CompareSet(LETIMER0,LETimerCOMP0,led_timer.LED_off_time);
-		led_timer.led_status = 1;
-	}
-	else
-	{
-		gpioLed0SetOff();
-		LETIMER_CompareSet(LETIMER0,LETimerCOMP0,led_timer.LED_on_time);
-		led_timer.led_status = 0;
-	}
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
 
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
 

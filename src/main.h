@@ -41,11 +41,14 @@
 /* User files */
 #include "timer.h"
 #include "errors.h"
+#include "log.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4
 #endif
 
-#define EnergyMode3	(1)
+#define EnergyMode1	(1)
+
+uint32_t event_bitmask;
 
 #endif /* SRC_MAIN_H_ */
