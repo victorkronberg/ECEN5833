@@ -15,13 +15,23 @@ void init_timer_interrupt(void)
 {
 
 
-	init_lfxo();
+	// Initialize LETIMER prior to initializing interrupts
 
 	letimer_struct.osc_frequency = 32768;
 	letimer_struct.LFA_prescaler = cmuClkDiv_4;
 	letimer_struct.period_in_ms = TimerPeriod;
 
-	init_letimer(&letimer_struct);
+	calculate_timer(&letimer_struct);
+
+	// Pre-load Compare registers
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+
+	// Enable LETIMER Interrupts on repeat
+	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
+	NVIC_EnableIRQ(LETIMER0_IRQn);
+
+
+	// Enable letimer on return
 
 	return;
 
@@ -46,6 +56,10 @@ void init_lfxo(void)
 
 void init_letimer(Timer_TypeDef *timer_struct)
 {
+	// Enable osciallator for letimer
+	init_lfxo();
+
+
 	// Enables LFA
 	CMU_ClockEnable(cmuClock_LFA,true);
 
@@ -68,19 +82,20 @@ void init_letimer(Timer_TypeDef *timer_struct)
 	// Initialize LETIMER w/ defaults - Set compare registers prior to initialization when starting timer from initialization
 	LETIMER_Init(LETIMER0,&init);
 
-	calculate_timer(timer_struct);
-
-	// Pre-load Compare registers
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_struct->timer_period);
-
-	// Enable LETIMER Interrupts on repeat
-	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
-	NVIC_EnableIRQ(LETIMER0_IRQn);
-
-	// Enable LETIMER0
-	LETIMER_Enable(LETIMER0, true);
 
 	return;
+}
+
+void enable_letimer(void)
+{
+	// Enable LETIMER0
+	LETIMER_Enable(LETIMER0, true);
+}
+
+void disable_letimer(void)
+{
+	// Enable LETIMER0
+	LETIMER_Enable(LETIMER0, false);
 }
 
 void calculate_timer(Timer_TypeDef *timer_struct)

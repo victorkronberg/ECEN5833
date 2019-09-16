@@ -63,6 +63,8 @@ void init_timer_interrupt(void);
 void init_lfxo(void);
 void init_ulfrco(void);
 void init_letimer(Timer_TypeDef *timer_struct);
+void enable_letimer(void);
+void disable_letimer(void)
 void calculate_timer(Timer_TypeDef *timer_struct);
 
 #endif /* SRC_TIMER_H_ */

@@ -10,4 +10,8 @@
 
 #include "main.h"
 
+void init_si7021(void);
+void enable_si7021_power(void);
+void disable_si7021_power(void);
+
 #endif /* SRC_SI7021_H_ */
