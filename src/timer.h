@@ -16,6 +16,8 @@
 #define LEDBlinkPeriod	(2250)	// Max = 7000 milliseconds
 #define TimerPeriod		(3000)	// Three second timer interval
 
+#define MAX_COUNTER		(0xFFFF)
+
 // Compare and Repeat registers
 #define LETimerCOMP0	(0)
 #define LETimerCOMP1	(1)
@@ -39,7 +41,7 @@
 #define LETIMER_COMPARE_REG_VALUE_FROM_MS(time_in_ms,LFACLK_freq_in_Hz,LFA_Prescaler)	\
 	(uint16_t)(((time_in_ms) * (LFACLK_freq_in_Hz)/(LFA_Prescaler))/1000)
 
-#define LETIMER_COMPARE_REG_VALUE_FROM_US(time_in_ms,LFACLK_freq_in_Hz,LFA_Prescaler)	\
+#define LETIMER_COMPARE_REG_VALUE_FROM_US(time_in_us,LFACLK_freq_in_Hz,LFA_Prescaler)	\
 	(uint16_t)(((time_in_us) * (LFACLK_freq_in_Hz)/(LFA_Prescaler))/1000000)
 /*
 typedef struct {
@@ -59,12 +61,15 @@ typedef struct {
 	uint16_t		timer_period;		// Value for letimer compare register
 } Timer_TypeDef;
 
-void init_timer_interrupt(void);
+
 void init_lfxo(void);
 void init_ulfrco(void);
-void init_letimer(Timer_TypeDef *timer_struct);
+void init_letimer(void);
+void init_timer_interrupt(void);
+void delay_us(uint32_t time_in_us);
 void enable_letimer(void);
-void disable_letimer(void)
+void disable_letimer(void);
+void clear_letimer(void);
 void calculate_timer(Timer_TypeDef *timer_struct);
 
 #endif /* SRC_TIMER_H_ */

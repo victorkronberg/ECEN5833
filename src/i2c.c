@@ -11,6 +11,6 @@
 void i2c_init(void)
 {
 	I2CSPM_Init_TypeDef i2c_values = i2c_init_EFR32BG13;
-	I2CSPM_Init(i2c_values);
+	I2CSPM_Init(&i2c_values);
 
 }

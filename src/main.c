@@ -5,7 +5,6 @@
 #include "main.h"
 
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
-uint32_t event_bitmask;
 
 
 #ifdef	EnergyMode3
@@ -67,10 +66,10 @@ int main(void)
   gpioInit();
 
   // Initialize timer
-  init_timer_interrupt();
+  init_letimer();
 
   // Set deepest sleep mode
-  SLEEP_SleepBlockBegin(blocked_sleep_mode);
+  //SLEEP_SleepBlockBegin(blocked_sleep_mode);
 
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
@@ -78,8 +77,13 @@ int main(void)
   /* Infinite loop */
   while (1) {
 
+	  gpioLed0SetOn();
+	  delay_us(50000);
+	  gpioLed0SetOff();
+	  delay_us(50000);
 
 	  // Check for event on wake
+	  /*
 	  if(event_bitmask == 0)
 	  {
 		  SLEEP_Sleep();
@@ -93,6 +97,7 @@ int main(void)
 
 		  }
 	  }
+	  */
 
   }
 }

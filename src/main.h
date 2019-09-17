@@ -49,12 +49,12 @@
 #define MAX_CONNECTIONS 4
 #endif
 
-#define EnergyMode1	(1)
+#define EnergyMode0	(1)
 
 // Event bitmasks
 #define TIMER_EVENT_MASK		(0x0001)
 #define TIMER_EVENT_MASK_POS	(0)
 
-extern uint32_t event_bitmask;
+uint32_t event_bitmask;
 
 #endif /* SRC_MAIN_H_ */
