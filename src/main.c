@@ -4,7 +4,11 @@
 
 #include "main.h"
 
+
+
+
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
+
 
 
 #ifdef	EnergyMode3
@@ -49,6 +53,9 @@ static void delayApproxOneSecond(void)
 
 int main(void)
 {
+
+	float temperature;
+
   // Initialize device
   initMcu();
   // Initialize board
@@ -68,8 +75,17 @@ int main(void)
   // Initialize timer
   init_letimer();
 
+  init_si7021();
+
+  i2c_init();
+
+
+
+
   // Set deepest sleep mode
-  //SLEEP_SleepBlockBegin(blocked_sleep_mode);
+  SLEEP_SleepBlockBegin(blocked_sleep_mode);
+
+  init_timer_interrupt();
 
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
@@ -77,27 +93,30 @@ int main(void)
   /* Infinite loop */
   while (1) {
 
-	  gpioLed0SetOn();
-	  delay_us(50000);
-	  gpioLed0SetOff();
-	  delay_us(50000);
+
 
 	  // Check for event on wake
-	  /*
-	  if(event_bitmask == 0)
+	  if(event_bitmask != 0)
 	  {
-		  SLEEP_Sleep();
+		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
+		  {
+			  disable_letimer();
+			  temperature = read_temp();
+
+			  init_timer_interrupt();
+			  // Clear event bitmask
+			  event_bitmask &= ~TIMER_EVENT_MASK;
+		  }
 	  }
 	  else
 	  {
 		  // Take a temperature measurement
-		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
-		  {
-			  // Handle timer event
 
-		  }
+
+			  SLEEP_Sleep();
+
 	  }
-	  */
+
 
   }
 }

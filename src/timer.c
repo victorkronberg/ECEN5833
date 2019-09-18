@@ -14,7 +14,7 @@ Timer_TypeDef letimer_struct;
 void init_letimer(void)
 {
 
-	letimer_struct.osc_frequency = 32768;
+	letimer_struct.osc_frequency = LFXO_FREQUENCY;
 	letimer_struct.LFA_prescaler = cmuClkDiv_4;
 	letimer_struct.period_in_ms = TimerPeriod;
 
@@ -73,9 +73,9 @@ void init_lfxo(void)
 
 void init_timer_interrupt(void)
 {
-
-	// Stope and clear LETIMER
+	// Stop and clear LETIMER
 	disable_letimer();
+	clear_letimer();
 
 	// Pre-load Compare registers
 	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
@@ -93,6 +93,8 @@ void init_timer_interrupt(void)
 
 void delay_us(uint32_t time_in_us)
 {
+	// Store previous timer period
+	uint16_t old_timer = letimer_struct.timer_period;
 
 	//Clear counter in case it is still running
 	disable_letimer();
@@ -101,14 +103,17 @@ void delay_us(uint32_t time_in_us)
 	letimer_struct.timer_period = LETIMER_COMPARE_REG_VALUE_FROM_US(time_in_us,letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
 
 	//Reload compare register
-	init_timer_interrupt();
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
 
 	enable_letimer();
 
-	__WFI();
+	while(LETIMER0->CNT > 0);
 
 	//Clear counter
 	disable_letimer();
+
+	// Restore original timer period
+	letimer_struct.timer_period = old_timer;
 
 	return;
 

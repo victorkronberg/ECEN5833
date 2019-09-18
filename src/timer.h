@@ -17,6 +17,7 @@
 #define TimerPeriod		(3000)	// Three second timer interval
 
 #define MAX_COUNTER		(0xFFFF)
+#define LFXO_FREQUENCY	(32768)
 
 // Compare and Repeat registers
 #define LETimerCOMP0	(0)
