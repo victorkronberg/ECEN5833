@@ -1,5 +1,6 @@
 /*
  * i2c.c
+ * I2C initialization and control for EFR32BG13
  *
  *  Created on: Sep 15, 2019
  *      Author: vkronber

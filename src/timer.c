@@ -1,8 +1,9 @@
 /*
  * timer.c
+ * LETIMER0 intialization and control for EFR32BG13
  *
  *  Created on: Sep 8, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #include "timer.h"
@@ -193,4 +194,3 @@ void LETIMER0_IRQHandler(void)
 	return;
 
 }
-

@@ -1,5 +1,6 @@
 /*
  * gpio.c
+ * GPIO control for LED0 and LED1
  *
  *  Created on: Dec 12, 2018
  *      Author: Dan Walkes

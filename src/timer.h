@@ -1,8 +1,9 @@
 /*
  * timer.h
+ * LETIMER0 intialization and control for EFR32BG13
  *
  *  Created on: Sep 8, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #ifndef SRC_TIMER_H_
@@ -54,6 +55,7 @@ typedef struct {
 } LED_timer_TypeDef;
 */
 
+
 typedef struct {
 	uint32_t 		led_status;			// LED on/off-status
 	uint32_t		osc_frequency;		// Frequency of oscillator
@@ -62,16 +64,53 @@ typedef struct {
 	uint16_t		timer_period;		// Value for letimer compare register
 } Timer_TypeDef;
 
-
+/**
+ * @description:  Initializes LFXO oscillator
+ */
 void init_lfxo(void);
-void init_ulfrco(void);
+/**
+ * @description:  Initializes LETIMER0 clock tree and required oscillator
+ */
 void init_letimer(void);
+
+/**
+ * @description:  Initializes LETIMER0 interrupt to trigger on UF.
+ * Utilizes COMP0 as TOP
+ *
+ */
 void init_timer_interrupt(void);
+
+/**
+ * @description:  Resets LETIMER0 interrupt using UF and COMP0 - clears CNT
+ */
 void reset_timer_interrupt(void);
+
+/**
+ * @description:  Blocking delay of specified time
+ * @param        time_in_us [microseconds to delay]
+ */
 void delay_us(uint32_t time_in_us);
+
+/**
+ *
+ * @description:  Enable LETIMER0 counter
+ */
 void enable_letimer(void);
+
+/**
+ * @description:  Disable LETIMER0 counter
+ */
 void disable_letimer(void);
+
+/**
+ * @description:  Clear LETIMER0 counter
+ */
 void clear_letimer(void);
+
+/**
+ * @description:  Calculate value for COMP0 based on specified timer period
+ * @param        timer_struct [Container for LETIMER parameters]
+ */
 void calculate_timer(Timer_TypeDef *timer_struct);
 
 #endif /* SRC_TIMER_H_ */
