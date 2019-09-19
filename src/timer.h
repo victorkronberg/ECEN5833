@@ -13,12 +13,13 @@
 #include "em_letimer.h"
 
 // LED timing in seconds
-#define LEDOnTime		(175)	// Max = 1000 milliseconds
-#define LEDBlinkPeriod	(2250)	// Max = 7000 milliseconds
-#define TimerPeriod		(3000)	// Three second timer interval
+#define LEDOnTime			(175)	// Max = 1000 milliseconds
+#define LEDBlinkPeriod		(2250)	// Max = 7000 milliseconds
+#define TimerPeriod			(3000)	// Three second timer interval
 
-#define MAX_COUNTER		(0xFFFF)
-#define LFXO_FREQUENCY	(32768)
+#define MAX_COUNTER			(0xFFFF)
+#define LFXO_FREQUENCY		(32768)
+#define ULFRCO_FREQUENCY	(1000)
 
 // Compare and Repeat registers
 #define LETimerCOMP0	(0)

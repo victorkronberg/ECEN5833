@@ -50,7 +50,7 @@
 #define MAX_CONNECTIONS 4
 #endif
 
-#define EnergyMode2	(1)
+#define EnergyMode3	(1)
 
 // Event bitmasks
 #define TIMER_EVENT_MASK		(0x0001)

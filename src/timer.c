@@ -14,7 +14,22 @@ Timer_TypeDef letimer_struct;
 // Initializes oscillator and clock tree for letimer
 void init_letimer(void)
 {
+	letimer_struct.period_in_ms = TimerPeriod - (CONVERSION_DELAY + POWER_UP_DELAY)/1000;
 
+	// Enables LFA
+	CMU_ClockEnable(cmuClock_LFA,true);
+
+#ifdef EnergyMode3
+	letimer_struct.osc_frequency = ULFRCO_FREQUENCY;
+	letimer_struct.LFA_prescaler = cmuClkDiv_1;
+
+	// Calculate default value based on #define
+	calculate_timer(&letimer_struct);
+
+
+	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_ULFRCO);
+
+#else
 	letimer_struct.osc_frequency = LFXO_FREQUENCY;
 	letimer_struct.LFA_prescaler = cmuClkDiv_4;
 	letimer_struct.period_in_ms = TimerPeriod - (CONVERSION_DELAY + POWER_UP_DELAY)/1000;
@@ -25,13 +40,6 @@ void init_letimer(void)
 	// Enable osciallator for letimer
 	init_lfxo();
 
-
-	// Enables LFA
-	CMU_ClockEnable(cmuClock_LFA,true);
-
-#ifdef EnergyMode3
-	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_ULFRCO);
-#else
 	// Select LXFO oscillator for LFA clock branch
 	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
 
