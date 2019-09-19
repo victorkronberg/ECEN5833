@@ -68,6 +68,7 @@ int main(void)
 
   // Initialize event flag
   event_bitmask = 0;
+  interrupt_event_bitmask = 0;
 
   // Initialize GPIO
   gpioInit();
@@ -94,28 +95,26 @@ int main(void)
   while (1) {
 
 
-
 	  // Check for event on wake
-	  if(event_bitmask != 0)
+	  if(event_bitmask == 0)
+	  {
+
+		  // Take a temperature measurement
+		  SLEEP_Sleep();
+
+	  }
+	  else
 	  {
 		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
 		  {
 			  disable_letimer();
 			  temperature = read_temp();
-
-			  init_timer_interrupt();
 			  // Clear event bitmask
 			  event_bitmask &= ~TIMER_EVENT_MASK;
+			  reset_timer_interrupt();
 		  }
 	  }
-	  else
-	  {
-		  // Take a temperature measurement
 
-
-			  SLEEP_Sleep();
-
-	  }
 
 
   }

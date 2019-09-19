@@ -28,7 +28,7 @@
 #define LETIMER_TEMP_INIT	                                                   		\
   {                                                                            		\
     false,              	/* Do not enable timer when init completes. */         	\
-    false,             		/* Stop counter during debug halt. */                   \
+    true,             		/* Do not halt counter during debug. */                 \
     true,              		/* Load COMP0 into CNT on underflow. */  	           	\
     true,            		/* Load COMP1 into COMP0 when REP0 reaches 0. */ 		\
     0,                		/* Idle value 0 for output 0. */                        \
@@ -67,6 +67,7 @@ void init_lfxo(void);
 void init_ulfrco(void);
 void init_letimer(void);
 void init_timer_interrupt(void);
+void reset_timer_interrupt(void);
 void delay_us(uint32_t time_in_us);
 void enable_letimer(void);
 void disable_letimer(void);

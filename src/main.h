@@ -37,6 +37,7 @@
 #include "em_chip.h"
 #include "gpio.h"
 #include "sleep.h"
+#include "em_core.h"
 
 /* User files */
 #include "timer.h"
@@ -49,12 +50,13 @@
 #define MAX_CONNECTIONS 4
 #endif
 
-#define EnergyMode1	(1)
+#define EnergyMode2	(1)
 
 // Event bitmasks
 #define TIMER_EVENT_MASK		(0x0001)
 #define TIMER_EVENT_MASK_POS	(0)
 
 uint32_t event_bitmask;
+uint32_t interrupt_event_bitmask;
 
 #endif /* SRC_MAIN_H_ */

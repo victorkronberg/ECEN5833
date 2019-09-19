@@ -91,23 +91,52 @@ void init_timer_interrupt(void)
 
 }
 
+
+void reset_timer_interrupt(void)
+{
+
+	// Stop and clear LETIMER
+	disable_letimer();
+	clear_letimer();
+
+	// Pre-load Compare registers
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+
+	// Clear interrupt flags
+	uint32_t flags = LETIMER_IntGet(LETIMER0);
+	LETIMER_IntClear(LETIMER0, flags);
+
+	// Enable LETIMER Interrupts on repeat
+	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
+
+	enable_letimer();
+
+}
+
+
 void delay_us(uint32_t time_in_us)
 {
+	float time_in_ms = time_in_us/1000;
 	// Store previous timer period
 	uint16_t old_timer = letimer_struct.timer_period;
 
 	//Clear counter in case it is still running
 	disable_letimer();
+	clear_letimer();
+
+	// Clear interrupt flags
+	uint32_t flags = LETIMER_IntGet(LETIMER0);
+	LETIMER_IntClear(LETIMER0, flags);
 
 	//Calculate required number of ticks
-	letimer_struct.timer_period = LETIMER_COMPARE_REG_VALUE_FROM_US(time_in_us,letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
+	letimer_struct.timer_period = LETIMER_COMPARE_REG_VALUE_FROM_MS(time_in_ms,letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
 
 	//Reload compare register
 	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
 
 	enable_letimer();
 
-	while(LETIMER0->CNT > 0);
+	while( ! (LETIMER0->IF & (1 << _LETIMER_IFC_UF_SHIFT)) );
 
 	//Clear counter
 	disable_letimer();
@@ -147,6 +176,7 @@ void calculate_timer(Timer_TypeDef *timer_struct)
 
 void LETIMER0_IRQHandler(void)
 {
+
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_UF);
 
 	// Acknowledge the interrupt
