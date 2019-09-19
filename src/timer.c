@@ -16,7 +16,7 @@ void init_letimer(void)
 
 	letimer_struct.osc_frequency = LFXO_FREQUENCY;
 	letimer_struct.LFA_prescaler = cmuClkDiv_4;
-	letimer_struct.period_in_ms = TimerPeriod;
+	letimer_struct.period_in_ms = TimerPeriod - (CONVERSION_DELAY + POWER_UP_DELAY)/1000;
 
 	// Calculate default value based on #define
 	calculate_timer(&letimer_struct);

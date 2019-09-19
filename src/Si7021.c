@@ -7,12 +7,6 @@
 
 #include "Si7021.h"
 
-#define	SENSOR_ENABLE_PIN	(15)
-#define	SENSOR_ENABLE_PORT	(gpioPortD)
-#define Si7021Addr			(0x40)
-#define READ_TEMP_NO_HOLD	(0xF3)
-#define CONVERSION_DELAY	(10800)
-
 void init_si7021(void)
 {
 	// Initialize sensor enable pin
