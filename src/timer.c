@@ -163,6 +163,7 @@ void disable_letimer(void)
 
 void clear_letimer(void)
 {
+	// Clear LEMTIMER0
 	LETIMER0->CMD = LETIMER_CMD_CLEAR;
 }
 
@@ -177,6 +178,7 @@ void calculate_timer(Timer_TypeDef *timer_struct)
 
 void LETIMER0_IRQHandler(void)
 {
+	__disable_irq();
 
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_UF);
 
@@ -184,12 +186,11 @@ void LETIMER0_IRQHandler(void)
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
 
-	//LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
-
 	// Set bit for timer
 	event_bitmask |= 1;
 
-	//LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
+	__enable_irq();
+
 
 	return;
 

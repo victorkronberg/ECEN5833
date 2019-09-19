@@ -88,6 +88,7 @@ int main(void)
 
   init_timer_interrupt();
 
+  CORE_DECLARE_IRQ_STATE;
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
   // gecko_init(&config);
@@ -105,6 +106,7 @@ int main(void)
 	  }
 	  else
 	  {
+		  CORE_ENTER_CRITICAL();
 		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
 		  {
 			  disable_letimer();
@@ -113,6 +115,7 @@ int main(void)
 			  event_bitmask &= ~TIMER_EVENT_MASK;
 			  reset_timer_interrupt();
 		  }
+		  CORE_EXIT_CRITICAL();
 	  }
 
 

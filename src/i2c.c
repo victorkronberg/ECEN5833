@@ -9,30 +9,23 @@
 
 #include "i2c.h"
 
-#define I2C_RXBUFFER_SIZE	2
-
-
-I2C_TransferReturn_TypeDef ret;
-I2C_TransferSeq_TypeDef txstruct;
-
-
-
 void i2c_init(void)
 {
+	// Initialize I2C using SiLabs driver
 	I2CSPM_Init_TypeDef i2c_values = I2CSPM_INIT_DEFAULT;
 	I2CSPM_Init(&i2c_values);
-
 }
 
 
 uint16_t i2c_read_2_bytes(uint8_t addr, uint8_t cmd, uint32_t delay)
 {
-	// Buffers++
+	// Buffers for I2C
 	uint8_t i2c_txBuffer[1] = {cmd};
 	uint8_t i2c_txBufferSize = sizeof(i2c_txBuffer);
 	uint8_t i2c_rxBuffer[I2C_RXBUFFER_SIZE];
 	uint16_t RXdata;
 
+	// Shift slave address to 8-bit format
 	txstruct.addr = addr << 1;
 
 	// Configure I2C structure for Write

@@ -13,9 +13,11 @@
 #include "i2cspm.h"
 #include "em_i2c.h"
 
-// Power Load control
-// Port D
-// Pin 15
+#define I2C_RXBUFFER_SIZE	2
+
+I2C_TransferReturn_TypeDef ret;
+I2C_TransferSeq_TypeDef txstruct;
+
 
 /**
  * @description:  Initialize EFR32 I2C to Si7021 interface

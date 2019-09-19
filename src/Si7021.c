@@ -32,10 +32,12 @@ float read_temp(void)
 
 	enable_si7021_power();
 
-	delay_us(80000);
+	delay_us(POWER_UP_DELAY);
 
+	// Read 2 bytes of data
 	temp_code = i2c_read_2_bytes(Si7021Addr,READ_TEMP_NO_HOLD,CONVERSION_DELAY);
 
+	// Calculate temperature from raw Si7021 data
 	temperature = ((175.72 * temp_code)/65536)-46.85;
 
 	LOG_INFO("Temperature in degrees C: %f",temperature);
