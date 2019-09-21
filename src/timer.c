@@ -9,6 +9,7 @@
 #include "timer.h"
 
 Timer_TypeDef letimer_struct;
+extern myStateTypeDef my_state_struct;
 
 
 // Initializes oscillator and clock tree for letimer
@@ -19,33 +20,10 @@ void init_letimer(void)
 	// Enables LFA
 	CMU_ClockEnable(cmuClock_LFA,true);
 
-#ifdef EnergyMode3
 	letimer_struct.osc_frequency = ULFRCO_FREQUENCY;
 	letimer_struct.LFA_prescaler = cmuClkDiv_1;
 
-	// Calculate default value based on #define
-	calculate_timer(&letimer_struct);
-
-
 	CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_ULFRCO);
-
-#else
-	letimer_struct.osc_frequency = LFXO_FREQUENCY;
-	letimer_struct.LFA_prescaler = cmuClkDiv_4;
-	letimer_struct.period_in_ms = TimerPeriod - (CONVERSION_DELAY + POWER_UP_DELAY)/1000;
-
-	// Calculate default value based on #define
-	calculate_timer(&letimer_struct);
-
-	// Enable osciallator for letimer
-	init_lfxo();
-
-	// Select LXFO oscillator for LFA clock branch
-	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
-
-	// Divide LETIMER by 4 - 8192Hz
-	CMU_ClockPrescSet(cmuClock_LETIMER0,letimer_struct.LFA_prescaler);
-#endif
 
 	// Enable LETIMER0
 	CMU_ClockEnable(cmuClock_LETIMER0, true);
@@ -56,10 +34,14 @@ void init_letimer(void)
 	// Initialize LETIMER w/ defaults - Set compare registers prior to initialization when starting timer from initialization
 	LETIMER_Init(LETIMER0,&init);
 
-	// Pre-load Compare registers
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+	// Load Repeat register with max => REP0IF set every (65,536*65,536)/osc_freq seconds
+	// Approx every 50 days for ULFRCO
+	// Add overflow handling mechanism if time
+	LETIMER_RepeatSet(LETIMER0,LETimerREP0,MAX_COUNTER);
 
 	enable_letimer();
+
+	reset_periodic_timer();
 
 	return;
 }
@@ -101,57 +83,39 @@ void init_timer_interrupt(void)
 }
 
 
-void reset_timer_interrupt(void)
+void reset_periodic_timer(void)
 {
 
-	// Stop and clear LETIMER
-	disable_letimer();
-	clear_letimer();
+	uint32_t timer_delta;
+
+	// Calculate timer value based on current CNT and time to next interrupt
+	timer_delta = calculate_timer(TimerPeriod);
 
 	// Pre-load Compare registers
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP1,timer_delta);
 
-	// Clear interrupt flags
-	uint32_t flags = LETIMER_IntGet(LETIMER0);
-	LETIMER_IntClear(LETIMER0, flags);
-
-	// Enable LETIMER Interrupts on repeat
-	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
-
-	enable_letimer();
+	// Enable LETIMER COMP1 interrupt
+	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP1);
 
 }
 
 
-void delay_us(uint32_t time_in_us)
+void delay_ms(uint32_t time_in_ms)
 {
-	float time_in_ms = time_in_us/1000;
-	// Store previous timer period
-	uint16_t old_timer = letimer_struct.timer_period;
+	uint32_t timer_delta;
 
-	//Clear counter in case it is still running
-	disable_letimer();
-	clear_letimer();
-
-	// Clear interrupt flags
+	// Clear interrupt flags??????????????????????????????????
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
 
-	//Calculate required number of ticks
-	letimer_struct.timer_period = LETIMER_COMPARE_REG_VALUE_FROM_MS(time_in_ms,letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
+	// Calculate timer value based on current CNT and time to next interrupt
+	timer_delta = calculate_timer(time_in_ms);
 
-	//Reload compare register
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
+	//Load compare register
+	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_delta);
 
-	enable_letimer();
-
-	while( ! (LETIMER0->IF & (1 << _LETIMER_IFC_UF_SHIFT)) );
-
-	//Clear counter
-	disable_letimer();
-
-	// Restore original timer period
-	letimer_struct.timer_period = old_timer;
+	// Enable LETIMER Interrupts on COMP0
+	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP0);
 
 	return;
 
@@ -175,27 +139,58 @@ void clear_letimer(void)
 	LETIMER0->CMD = LETIMER_CMD_CLEAR;
 }
 
-void calculate_timer(Timer_TypeDef *timer_struct)
+uint32_t calculate_timer(uint32_t time_in_ms)
 {
 
-	// Number of ticks required = OnTime * clock frequency
-	// Each register can hold 65536 ticks
-	timer_struct->timer_period = LETIMER_COMPARE_REG_VALUE_FROM_MS(timer_struct->period_in_ms,timer_struct->osc_frequency,timer_struct->LFA_prescaler);
+	//Calculate required number of ticks
+	letimer_struct.timer_period = LETIMER_COMPARE_REG_VALUE_FROM_MS(time_in_ms,letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
 
+	// Calculate required value for COMP0 = (current CNT) - timer_period
+	return(LETIMER0->CNT - letimer_struct.timer_period);
+
+}
+
+uint32_t timerGetRunTimeMilliseconds(void)
+{
+	//float time_in_ms;
+	uint32_t time_in_ms;
+
+	// Time = timer ticks * 1000 * seconds/tick (prescaler/frequency)
+	//time_in_ms = (65535 - LETIMER0->CNT) * ((1000 * letimer_struct.LFA_prescaler)/letimer_struct.osc_frequency);
+
+	time_in_ms = LETIMER_MS_FROM_REGISTER_TICS((MAX_COUNTER - LETIMER0->CNT),letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
+
+	return	time_in_ms;
 }
 
 void LETIMER0_IRQHandler(void)
 {
 	__disable_irq();
 
-	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_UF);
-
-	// Acknowledge the interrupt
+	// Acknowledge the interrupt and clear flags
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
 
-	// Set bit for timer
-	event_bitmask |= 1;
+	// Process interrupts
+	// Check for COMP1 flag - periodic interrupt
+	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )
+	{
+		// Set bit for timer
+		my_state_struct.event_bitmask |= TIMER_EVENT_MASK;
+		// Disable COMP1 interrupt
+		LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
+
+	}
+
+// How to handle case where timer wraps and COMP1 flag is set unintentionally?
+		// Check for COMP0 flag
+		if(((flags & LETIMER_IF_COMP0) >> _LETIMER_IF_COMP0_SHIFT) == 1 )
+		{
+			// Set bit for delay
+			my_state_struct.event_bitmask |= DELAY_EVENT_MASK;
+			// Disable COMP0 interrupt
+			LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);
+		}
 
 	__enable_irq();
 

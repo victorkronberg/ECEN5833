@@ -9,6 +9,8 @@
 
 #include "i2c.h"
 
+extern myStateTypeDef my_state_struct;
+
 void i2c_init(void)
 {
 	// Initialize I2C using SiLabs driver
@@ -65,4 +67,9 @@ uint16_t i2c_read_2_bytes(uint8_t addr, uint8_t cmd, uint32_t delay)
 	}
 
 	return RXdata;
+}
+
+void I2C0_IRQHandler(void)
+{
+
 }

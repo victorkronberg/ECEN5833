@@ -45,6 +45,7 @@
 #include "log.h"
 #include "i2c.h"
 #include "Si7021.h"
+#include "scheduler.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4
@@ -55,6 +56,27 @@
 // Event bitmasks
 #define TIMER_EVENT_MASK		(0x0001)
 #define TIMER_EVENT_MASK_POS	(0)
+#define DELAY_EVENT_MASK		(0x0002)
+#define DELAY_EVENT_MASK_POS	(1)
+#define I2C_EVENT_MASK			(0x0004)
+#define I2C_EVENT_MASK_POS		(2)
+
+typedef enum states  {
+	STATE0_WAIT_FOR_TIMER,
+	STATE1_I2C_POWER_UP,
+	STATE2_I2C_WRITE,
+	STATE3_I2C_WAIT,
+	STATE4_I2C_READ,
+	STATE5_I2C_POWER_DOWN,
+	MY_NUM_STATES
+} myState;
+
+typedef struct	{
+	myState current_state;
+	myState next_state;
+	uint32_t event_bitmask;
+	uint32_t periodic_timer0;
+} myStateTypeDef;
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;

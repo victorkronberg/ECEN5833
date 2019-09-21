@@ -31,13 +31,13 @@
   {                                                                            		\
     false,              	/* Do not enable timer when init completes. */         	\
     true,             		/* Do not halt counter during debug. */                 \
-    true,              		/* Load COMP0 into CNT on underflow. */  	           	\
-    true,            		/* Load COMP1 into COMP0 when REP0 reaches 0. */ 		\
+    false,             		/* Do not COMP0 into CNT on underflow. */  	           	\
+    false,            		/* Do not COMP1 into COMP0 when REP0 reaches 0. */ 		\
     0,                		/* Idle value 0 for output 0. */                        \
     0,                		/* Idle value 0 for output 1. */                        \
     letimerUFOANone,   		/* No action on underflow on output 0. */               \
     letimerUFOANone,   		/* No action on underflow on output 1. */               \
-	letimerRepeatFree,		/* Repeat until stopped by SW */            			\
+	letimerRepeatOneshot,	/* Repeat Rep0 times, then load Rep1 into Rep0 */    	\
     0                  		/* Use default top Value. */                            \
   }
 
@@ -46,6 +46,10 @@
 
 #define LETIMER_COMPARE_REG_VALUE_FROM_US(time_in_us,LFACLK_freq_in_Hz,LFA_Prescaler)	\
 	(uint16_t)(((time_in_us) * (LFACLK_freq_in_Hz)/(LFA_Prescaler))/1000000)
+
+#define LETIMER_MS_FROM_REGISTER_TICS(register_value,LFACLK_freq_in_Hz,LFA_Prescaler)	\
+	(uint32_t) ( (register_value) * ((1000 * LFA_Prescaler) / (LFACLK_freq_in_Hz)))
+
 /*
 typedef struct {
 	uint32_t 		led_status;			// LED on/off-status
@@ -81,16 +85,11 @@ void init_letimer(void);
  */
 void init_timer_interrupt(void);
 
-/**
- * @description:  Resets LETIMER0 interrupt using UF and COMP0 - clears CNT
- */
-void reset_timer_interrupt(void);
 
-/**
- * @description:  Blocking delay of specified time
- * @param        time_in_us [microseconds to delay]
- */
-void delay_us(uint32_t time_in_us);
+void reset_periodic_timer(void);
+
+
+void delay_ms(uint32_t time_in_ms);
 
 /**
  *
@@ -108,10 +107,9 @@ void disable_letimer(void);
  */
 void clear_letimer(void);
 
-/**
- * @description:  Calculate value for COMP0 based on specified timer period
- * @param        timer_struct [Container for LETIMER parameters]
- */
-void calculate_timer(Timer_TypeDef *timer_struct);
+
+uint32_t calculate_timer(uint32_t time_in_ms);
+
+uint32_t timerGetRunTimeMilliseconds(void);
 
 #endif /* SRC_TIMER_H_ */

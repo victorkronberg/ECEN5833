@@ -19,6 +19,8 @@ const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM3;
 const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM2;
 #endif
 
+myStateTypeDef my_state_struct;
+
 // Gecko configuration parameters (see gecko_configuration.h)
 static const gecko_configuration_t config = {
   .config_flags = 0,
@@ -67,8 +69,7 @@ int main(void)
   logInit();
 
   // Initialize event flag
-  event_bitmask = 0;
-  interrupt_event_bitmask = 0;
+  my_state_struct.event_bitmask = 0;
 
   // Initialize GPIO
   gpioInit();
@@ -82,11 +83,12 @@ int main(void)
 
 
 
+  my_state_struct.current_state = STATE0_WAIT_FOR_TIMER;
 
   // Set deepest sleep mode
   SLEEP_SleepBlockBegin(blocked_sleep_mode);
 
-  init_timer_interrupt();
+  //init_timer_interrupt();
 
   CORE_DECLARE_IRQ_STATE;
   // Initialize BLE stack.
@@ -95,19 +97,24 @@ int main(void)
   /* Infinite loop */
   while (1) {
 
+	  delayApproxOneSecond();
+	  LOG_INFO("The current time is:");
+
 
 	  // Check for event on wake
-	  if(event_bitmask == 0)
+	  if(my_state_struct.event_bitmask == 0)
 	  {
-
-		  // Take a temperature measurement
+		  // Wait for event
 		  SLEEP_Sleep();
-
 	  }
 	  else
 	  {
 		  CORE_ENTER_CRITICAL();
-		  if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
+
+		  // Call scheduler
+		  scheduler(&my_state_struct);
+
+		  /*if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
 		  {
 			  disable_letimer();
 			  temperature = read_temp();
@@ -115,8 +122,10 @@ int main(void)
 			  event_bitmask &= ~TIMER_EVENT_MASK;
 			  reset_timer_interrupt();
 		  }
+		  */
 		  CORE_EXIT_CRITICAL();
 	  }
+
 
 
 
