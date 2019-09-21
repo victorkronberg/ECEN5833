@@ -81,4 +81,6 @@ typedef struct	{
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;
 
+void my_scheduler(myStateTypeDef *state_struct);
+
 #endif /* SRC_MAIN_H_ */

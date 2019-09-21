@@ -39,6 +39,8 @@ void init_letimer(void)
 	// Add overflow handling mechanism if time
 	LETIMER_RepeatSet(LETIMER0,LETimerREP0,MAX_COUNTER);
 
+	NVIC_EnableIRQ(LETIMER0_IRQn);
+
 	enable_letimer();
 
 	reset_periodic_timer();
@@ -182,15 +184,21 @@ void LETIMER0_IRQHandler(void)
 
 	}
 
-// How to handle case where timer wraps and COMP1 flag is set unintentionally?
-		// Check for COMP0 flag
-		if(((flags & LETIMER_IF_COMP0) >> _LETIMER_IF_COMP0_SHIFT) == 1 )
+	// Check for COMP0 flag - should only be set during delay states
+	if(((flags & LETIMER_IF_COMP0) >> _LETIMER_IF_COMP0_SHIFT) == 1 )
+	{
+		if(my_state_struct.current_state == (STATE3_I2C_WAIT | STATE1_I2C_POWER_UP) )
 		{
 			// Set bit for delay
 			my_state_struct.event_bitmask |= DELAY_EVENT_MASK;
 			// Disable COMP0 interrupt
 			LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);
 		}
+		else
+		{
+			LOG_ERROR("Incorrect interrupt flag set.  COMP0 flagged during %d",my_state_struct.current_state);
+		}
+	}
 
 	__enable_irq();
 

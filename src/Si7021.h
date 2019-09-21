@@ -15,8 +15,8 @@
 #define	SENSOR_ENABLE_PORT	(gpioPortD)
 #define Si7021Addr			(0x40)
 #define READ_TEMP_NO_HOLD	(0xF3)
-#define CONVERSION_DELAY	(10800)
-#define POWER_UP_DELAY		(80000)
+#define CONVERSION_DELAY	(11)
+#define POWER_UP_DELAY		(80)
 
 /**
   * @description: Initializes Si7021 humidity and temperature sensor
