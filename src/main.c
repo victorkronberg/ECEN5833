@@ -97,9 +97,6 @@ int main(void)
   /* Infinite loop */
   while (1) {
 
-	  delayApproxOneSecond();
-
-
 	  // Check for event on wake
 	  if(my_state_struct.event_bitmask == 0)
 	  {

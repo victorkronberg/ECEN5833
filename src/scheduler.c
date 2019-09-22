@@ -69,6 +69,8 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE3_I2C_WAIT:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
+				// Clear event bitmask
+				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
 				// Conversion delay is complete, init I2C for read
 				si7021_init_i2c_temp_read();
 				// Set deepest sleep as EM1 for I2C read
@@ -80,6 +82,9 @@ void my_scheduler(myStateTypeDef *state_struct)
 			// If event flag set for read transfer complete, read temperature from return registers and calc temp
 			if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
 			{
+				// Clear event bitmask
+				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
+
 				// Calculate temperature
 				temperature = si7021_return_last_temp();
 

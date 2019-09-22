@@ -37,7 +37,7 @@ void si7021_init_i2c_temp_read(void)
 {
 	// Load I2c with slave address read command
 	// Enable I2C interrupts and return
-	i2c_interrupt_read(Si7021Addr);
+	i2c_interrupt_read_2_byte(Si7021Addr);
 
 }
 
