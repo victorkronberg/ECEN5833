@@ -15,7 +15,7 @@ extern myStateTypeDef my_state_struct;
 // Initializes oscillator and clock tree for letimer
 void init_letimer(void)
 {
-	letimer_struct.period_in_ms = TimerPeriod - (CONVERSION_DELAY + POWER_UP_DELAY)/1000;
+	letimer_struct.period_in_ms = TimerPeriod;
 
 	// Enables LFA
 	CMU_ClockEnable(cmuClock_LFA,true);
@@ -96,6 +96,9 @@ void reset_periodic_timer(void)
 	// Pre-load Compare registers
 	LETIMER_CompareSet(LETIMER0,LETimerCOMP1,timer_delta);
 
+	// Ensure COMP1 interrupt flag is not set
+	LETIMER_IntClear(LETIMER0, LETIMER_IEN_COMP1);
+
 	// Enable LETIMER COMP1 interrupt
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP1);
 
@@ -106,15 +109,14 @@ void delay_ms(uint32_t time_in_ms)
 {
 	uint32_t timer_delta;
 
-	// Clear interrupt flags??????????????????????????????????
-	uint32_t flags = LETIMER_IntGet(LETIMER0);
-	LETIMER_IntClear(LETIMER0, flags);
-
 	// Calculate timer value based on current CNT and time to next interrupt
 	timer_delta = calculate_timer(time_in_ms);
 
 	//Load compare register
 	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_delta);
+
+	// Clear COMP0 interrupt flag
+	LETIMER_IntClear(LETIMER0, LETIMER_IEN_COMP0);
 
 	// Enable LETIMER Interrupts on COMP0
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP0);
@@ -173,6 +175,8 @@ void LETIMER0_IRQHandler(void)
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
 
+	LOG_INFO("Timer interrupt thrown with flag %d and state %d",flags,my_state_struct.current_state);
+
 	// Process interrupts
 	// Check for COMP1 flag - periodic interrupt
 	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )
@@ -187,7 +191,7 @@ void LETIMER0_IRQHandler(void)
 	// Check for COMP0 flag - should only be set during delay states
 	if(((flags & LETIMER_IF_COMP0) >> _LETIMER_IF_COMP0_SHIFT) == 1 )
 	{
-		if(my_state_struct.current_state == (STATE3_I2C_WAIT | STATE1_I2C_POWER_UP) )
+		if( (my_state_struct.current_state == STATE3_I2C_WAIT) || (my_state_struct.current_state == STATE1_I2C_POWER_UP) )
 		{
 			// Set bit for delay
 			my_state_struct.event_bitmask |= DELAY_EVENT_MASK;

@@ -98,7 +98,6 @@ int main(void)
   while (1) {
 
 	  delayApproxOneSecond();
-	  LOG_INFO("The current time is:");
 
 
 	  // Check for event on wake
@@ -109,103 +108,25 @@ int main(void)
 	  }
 	  else
 	  {
-		  CORE_ENTER_CRITICAL();
+		  __disable_irq();
 
 		  // Call scheduler
 		  my_scheduler(&my_state_struct);
 
-		  /*if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
-		  {
-			  disable_letimer();
-			  temperature = read_temp();
-			  // Clear event bitmask
-			  event_bitmask &= ~TIMER_EVENT_MASK;
-			  reset_timer_interrupt();
-		  }
-		  */
-		  CORE_EXIT_CRITICAL();
+		  __enable_irq();
 	  }
-
-
-
 
   }
 }
 
-void my_scheduler(myStateTypeDef *state_struct)
+
+
+/*if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
 {
-	switch (state_struct->current_state)
-	{
-		case STATE0_WAIT_FOR_TIMER:
-			if( ((state_struct->event_bitmask & TIMER_EVENT_MASK) >> TIMER_EVENT_MASK_POS) == 1 )
-			{
-				// Clear event bitmask
-				state_struct->event_bitmask &= ~TIMER_EVENT_MASK;
-
-				// Reset period interrupt
-				reset_periodic_timer();
-
-				// Call I2C power-up
-				enable_si7021_power();
-
-				// Set timer for power-up delay
-				delay_ms(POWER_UP_DELAY);
-
-				// Set next state
-				state_struct->next_state = STATE1_I2C_POWER_UP;
-
-			}
-			break;
-		case STATE1_I2C_POWER_UP:
-			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
-			{
-				// Clear event bitmask
-				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
-
-				// Add sleep blocking
-
-				// Start I2C write
-
-				// Set next state
-				state_struct->next_state = STATE2_I2C_WRITE;
-			}
-			break;
-		case STATE2_I2C_WRITE:
-			//if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
-			//{
-				// Clear event bitmask
-				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
-
-				// Handle I2C event - check for complete
-
-				// What to do while we wait for write to complete? Do we need an if here?
-
-				delay_ms(CONVERSION_DELAY);
-				// Set next state if complete
-				state_struct->next_state = STATE3_I2C_WAIT;
-			//}
-			break;
-		case STATE3_I2C_WAIT:
-			// Deep sleep here?
-			state_struct->next_state = STATE4_I2C_READ;
-			break;
-		case STATE4_I2C_READ:
-			state_struct->next_state = STATE5_I2C_POWER_DOWN;
-			break;
-		case STATE5_I2C_POWER_DOWN:
-			disable_si7021_power();
-			state_struct->next_state = STATE0_WAIT_FOR_TIMER;
-			// Remove sleep blocking
-			break;
-		default:
-			break;
-	}
-
-	if(state_struct->current_state != state_struct->next_state)
-	{
-		LOG_DEBUG("State transitioned from state %d to %d",
-				state_struct->current_state,state_struct->next_state);
-		state_struct->current_state = state_struct->next_state;
-	}
-
+	  disable_letimer();
+	  temperature = read_temp();
+	  // Clear event bitmask
+	  event_bitmask &= ~TIMER_EVENT_MASK;
+	  reset_timer_interrupt();
 }
+*/

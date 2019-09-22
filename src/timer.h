@@ -30,7 +30,7 @@
 #define LETIMER_TEMP_INIT	                                                   		\
   {                                                                            		\
     false,              	/* Do not enable timer when init completes. */         	\
-    true,             		/* Do not halt counter during debug. */                 \
+    false,             		/* Halt counter during debug. */                 		\
     false,             		/* Do not COMP0 into CNT on underflow. */  	           	\
     false,            		/* Do not COMP1 into COMP0 when REP0 reaches 0. */ 		\
     0,                		/* Idle value 0 for output 0. */                        \

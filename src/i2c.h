@@ -24,6 +24,12 @@ I2C_TransferSeq_TypeDef txstruct;
  */
 void i2c_init(void);
 
+void i2c_interrupt_write(uint8_t addr, uint8_t cmd);
+
+void i2c_interrupt_read_2_byte(uint8_t addr);
+
+uint16_t i2c_return_last_2_bytes(void);
+
 /**
  * @description:  Write a single byte command, delay a specified number of
  *    microseconds, then read 2 bytes from the I2C interface

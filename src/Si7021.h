@@ -33,6 +33,12 @@ void enable_si7021_power(void);
  */
 void disable_si7021_power(void);
 
+void si7021_init_i2c_temp_write(void);
+
+void si7021_init_i2c_temp_read(void);
+
+float si7021_return_last_temp(void);
+
 /**
  * @description:  Read current temperature from Si7021
  * @return        [temperature in degrees C - floating point]
