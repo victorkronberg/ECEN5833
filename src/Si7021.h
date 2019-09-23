@@ -33,16 +33,27 @@ void enable_si7021_power(void);
  */
 void disable_si7021_power(void);
 
+/**
+ * [si7021_init_i2c_temp_write]
+ * @description: Calls I2C function to write "Read" command to Si7021
+ */
 void si7021_init_i2c_temp_write(void);
 
+/**
+ * [si7021_init_i2c_temp_read]
+ * @description: Calls I2C function to read from Si7021.  This is called after
+ *               si7021_init_i2c_temp_write.
+ */
 void si7021_init_i2c_temp_read(void);
 
-float si7021_return_last_temp(void);
-
 /**
- * @description:  Read current temperature from Si7021
- * @return        [temperature in degrees C - floating point]
+ * [si7021_return_last_temp]
+ * @description: Read temperature from Si7021. This function is called after
+ *               si7021_init_i2c_temp_read once the I2C transaction is complete.
+ *               It takes the 16 bit unsigned int raw output from the si7021 and
+ *               converts it into floating point degrees in C.
+ * @return        [Temperature in degrees C (floating point)]
  */
-float read_temp(void);
+float si7021_return_last_temp(void);
 
 #endif /* SRC_SI7021_H_ */

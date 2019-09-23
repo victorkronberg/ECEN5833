@@ -79,16 +79,17 @@ void init_lfxo(void);
 void init_letimer(void);
 
 /**
- * @description:  Initializes LETIMER0 interrupt to trigger on UF.
- * Utilizes COMP0 as TOP
- *
+ * [reset_periodic_timer]
+ * @description: Resets periodic 3 sec interrupt timer
  */
-void init_timer_interrupt(void);
-
-
 void reset_periodic_timer(void);
 
-
+/**
+ * [delay_ms]
+ * @description: Sets an interrupt-driven delay timer for a specified number of ms.
+ *               Enables the interrupt based on an offset from the current counter.
+ * @param        time_in_ms [Number of milliseconds for delay (unsigned int)]
+ */
 void delay_ms(uint32_t time_in_ms);
 
 /**
@@ -107,9 +108,22 @@ void disable_letimer(void);
  */
 void clear_letimer(void);
 
-
+/**
+ * [calculate_timer]
+ * @description: Calculates value for COMP registers in order to satisfy a timer
+ *               of a specified number of milliseconds.  Calculates number of
+ *               ticks based on oscillator frequency, prescaler, and current CNT.
+ * @param        time_in_ms [Number of milliseconds to delay]
+ * @return                  [Value for COMP register to trigger COMP IF]
+ */
 uint32_t calculate_timer(uint32_t time_in_ms);
 
+/**
+ * [timerGetRunTimeMilliseconds]
+ * @description: Retrieves the number of milliseconds that have elapsed since
+ *               the program began running. Overflows at 65536.
+ * @return        [Number of milliseconds since program initiated]
+ */
 uint32_t timerGetRunTimeMilliseconds(void);
 
 #endif /* SRC_TIMER_H_ */

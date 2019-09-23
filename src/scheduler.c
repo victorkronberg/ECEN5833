@@ -21,14 +21,8 @@ void my_scheduler(myStateTypeDef *state_struct)
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~TIMER_EVENT_MASK;
 
-				// Reset period interrupt
-				reset_periodic_timer();
-
-				// Call I2C power-up
-				enable_si7021_power();
-
-				// Set timer for power-up delay
-				delay_ms(POWER_UP_DELAY);
+				// Reset timer, power up si7021, and set delay to wait for power-up
+				scheduler_power_up_si7021();
 
 				// Set next state
 				state_struct->next_state = STATE1_I2C_POWER_UP;
@@ -38,13 +32,12 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE1_I2C_POWER_UP:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
-				// Set deepest sleep mode for I2C write
-				SLEEP_SleepBlockBegin(sleepEM2);
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
 
-				// Start I2C write
-				si7021_init_i2c_temp_write();
+				// Set deepest sleep state to EM1 and begin i2c write
+				scheduler_start_i2c_write();
+
 				// Set next state
 				state_struct->next_state = STATE2_I2C_WRITE;
 			}
@@ -55,13 +48,9 @@ void my_scheduler(myStateTypeDef *state_struct)
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
 
-				// Handle I2C event - check for complete
+				// Set deepest sleep state to EM3 and set delay timer to wait for conversion
+				scheduler_wait_for_temp_conversion();
 
-				// What to do while we wait for write to complete? Do we need an if here?
-
-				// Go to EM3 for conversion delay wait
-				SLEEP_SleepBlockEnd(sleepEM2);
-				delay_ms(CONVERSION_DELAY);
 				// Set next state if complete
 				state_struct->next_state = STATE3_I2C_WAIT;
 			}
@@ -71,10 +60,11 @@ void my_scheduler(myStateTypeDef *state_struct)
 			{
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
-				// Conversion delay is complete, init I2C for read
-				si7021_init_i2c_temp_read();
-				// Set deepest sleep as EM1 for I2C read
-				SLEEP_SleepBlockBegin(sleepEM2);
+
+				// Set deepest sleep to EM1 and start i2c read
+				scheduler_start_i2c_read();
+
+				// Set next state if complete
 				state_struct->next_state = STATE4_I2C_READ;
 			}
 			break;
@@ -85,14 +75,9 @@ void my_scheduler(myStateTypeDef *state_struct)
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
 
-				// Calculate temperature
-				temperature = si7021_return_last_temp();
+				// Retrieve temperature from I2C buffer, set deepest sleep to EM3, and power down Si7021
+				scheduler_return_temp_then_wait();
 
-				LOG_INFO("Current temperature in degrees C: %f",temperature);
-
-				disable_si7021_power();
-				// Go back to deepest sleep to wait for next temperature reading
-				SLEEP_SleepBlockEnd(sleepEM2);
 				state_struct->next_state = STATE0_WAIT_FOR_TIMER;
 			}
 			break;
@@ -106,4 +91,57 @@ void my_scheduler(myStateTypeDef *state_struct)
 		state_struct->current_state = state_struct->next_state;
 	}
 
+}
+
+void scheduler_power_up_si7021(void)
+{
+	// Reset period interrupt
+	reset_periodic_timer();
+
+	// Call I2C power-up
+	enable_si7021_power();
+
+	// Set timer for power-up delay
+	delay_ms(POWER_UP_DELAY);
+}
+
+void scheduler_start_i2c_write(void)
+{
+	// Set deepest sleep mode for I2C write
+	SLEEP_SleepBlockBegin(sleepEM2);
+
+	// Start I2C write
+	si7021_init_i2c_temp_write();
+}
+
+void scheduler_wait_for_temp_conversion(void)
+{
+	// Go to EM3 for conversion delay wait
+	SLEEP_SleepBlockEnd(sleepEM2);
+
+	// Set delay to wait form Si7021 conversion
+	delay_ms(CONVERSION_DELAY);
+}
+
+void scheduler_start_i2c_read(void)
+{
+	// Conversion delay is complete, init I2C for read
+	si7021_init_i2c_temp_read();
+
+	// Set deepest sleep as EM1 for I2C read
+	SLEEP_SleepBlockBegin(sleepEM2);
+}
+
+void scheduler_return_temp_then_wait(void)
+{
+	// Calculate temperature
+	temperature = si7021_return_last_temp();
+
+	LOG_INFO("Current temperature in degrees C: %f",temperature);
+
+	// Power down Si7021
+	disable_si7021_power();
+
+	// Go back to deepest sleep to wait for next temperature reading
+	SLEEP_SleepBlockEnd(sleepEM2);
 }

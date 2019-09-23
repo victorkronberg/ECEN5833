@@ -54,26 +54,3 @@ float si7021_return_last_temp(void)
 	return temperature;
 
 }
-
-float read_temp(void)
-{
-	float temperature;
-	uint16_t temp_code;
-
-	enable_si7021_power();
-
-	delay_us(POWER_UP_DELAY);
-
-	// Read 2 bytes of data
-	temp_code = i2c_read_2_bytes(Si7021Addr,READ_TEMP_NO_HOLD,CONVERSION_DELAY);
-
-	// Calculate temperature from raw Si7021 data
-	temperature = ((175.72 * temp_code)/65536)-46.85;
-
-	LOG_INFO("Temperature in degrees C: %f",temperature);
-
-	disable_si7021_power();
-
-	return temperature;
-
-}

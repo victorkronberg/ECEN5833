@@ -64,26 +64,6 @@ void init_lfxo(void)
 	return;
 }
 
-void init_timer_interrupt(void)
-{
-	// Stop and clear LETIMER
-	disable_letimer();
-	clear_letimer();
-
-	// Pre-load Compare registers
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,letimer_struct.timer_period);
-
-	// Enable LETIMER Interrupts on repeat
-	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_UF);
-	NVIC_EnableIRQ(LETIMER0_IRQn);
-
-
-	enable_letimer();
-
-	return;
-
-}
-
 
 void reset_periodic_timer(void)
 {

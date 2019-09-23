@@ -56,7 +56,7 @@ static void delayApproxOneSecond(void)
 int main(void)
 {
 
-	float temperature;
+	SLEEP_EnergyMode_t sleep_mode;
 
   // Initialize device
   initMcu();
@@ -101,7 +101,8 @@ int main(void)
 	  if(my_state_struct.event_bitmask == 0)
 	  {
 		  // Wait for event
-		  SLEEP_Sleep();
+		  sleep_mode = SLEEP_Sleep();
+		  LOG_INFO("Last sleep mode was %d, we are in state %d",sleep_mode,my_state_struct.current_state);
 	  }
 	  else
 	  {

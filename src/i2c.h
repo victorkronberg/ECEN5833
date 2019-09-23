@@ -24,20 +24,30 @@ I2C_TransferSeq_TypeDef txstruct;
  */
 void i2c_init(void);
 
+/**
+ * [i2c_interrupt_write]
+ * @description: Initialize interrupt driven I2C write sequence to write a 1 byte
+ *               command to an I2C device at a given address
+ * @param        addr [Address of I2C slave device]
+ * @param        cmd  [Command to write to slave device register]
+ */
 void i2c_interrupt_write(uint8_t addr, uint8_t cmd);
 
+/**
+ * [i2c_interrupt_read_2_byte]
+ * @description: Initialize interrupt drive I2C read sequence to read two bytes
+ *               from an I2C device
+ * @param        addr [Address of slave device to read from]
+ */
 void i2c_interrupt_read_2_byte(uint8_t addr);
 
-uint16_t i2c_return_last_2_bytes(void);
-
 /**
- * @description:  Write a single byte command, delay a specified number of
- *    microseconds, then read 2 bytes from the I2C interface
- * @param        addr  [Slave address to read from]
- * @param        cmd   [Command to send to slave device]
- * @param        delay [Microseconds to delay between write and read]
- * @return             [Two bytes read from I2C slave device - 0 returned on error]
+ * [i2c_return_last_2_bytes]
+ * @description: Returns last two bytes written into the I2C transfer structure.
+ *               This is to be called after i2c_interrupt_read_2_byte in order to
+ *               return the bytes read from the slave device.
+ * @return        [2 bytes from the i2c trasnfer structure as a 16 bit unisgned integer]
  */
-uint16_t i2c_read_2_bytes(uint8_t addr, uint8_t cmd, uint32_t delay);
+uint16_t i2c_return_last_2_bytes(void);
 
 #endif /* SRC_I2C_H_ */
