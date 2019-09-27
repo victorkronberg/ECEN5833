@@ -11,10 +11,14 @@
 Timer_TypeDef letimer_struct;
 extern myStateTypeDef my_state_struct;
 
+uint32_t overflow_counter;
+
 
 // Initializes oscillator and clock tree for letimer
 void init_letimer(void)
 {
+	overflow_counter = 0;
+
 	letimer_struct.period_in_ms = TimerPeriod;
 
 	// Enables LFA
@@ -144,6 +148,8 @@ uint32_t timerGetRunTimeMilliseconds(void)
 
 	time_in_ms = LETIMER_MS_FROM_REGISTER_TICS((MAX_COUNTER - LETIMER0->CNT),letimer_struct.osc_frequency,letimer_struct.LFA_prescaler);
 
+	time_in_ms += (overflow_counter * 65535);
+
 	return	time_in_ms;
 }
 
@@ -182,6 +188,12 @@ void LETIMER0_IRQHandler(void)
 		{
 			LOG_ERROR("Incorrect interrupt flag set.  COMP0 flagged during %d",my_state_struct.current_state);
 		}
+	}
+
+	// Check for timer roll over
+	if(((flags & LETIMER_IF_UF) >> _LETIMER_IF_UF_SHIFT) == 1 )
+	{
+		overflow_counter += 1;
 	}
 
 	__enable_irq();
