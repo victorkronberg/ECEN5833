@@ -88,6 +88,17 @@ void reset_periodic_timer(void)
 
 }
 
+void disable_timer_interrupts(void)
+{
+	// Clear any pending timer interrupt flags
+	uint32_t flags = LETIMER_IntGet(LETIMER0);
+	LETIMER_IntClear(LETIMER0, flags);
+
+	// Disable interrupts
+	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
+	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);
+}
+
 
 void delay_ms(uint32_t time_in_ms)
 {
@@ -169,6 +180,7 @@ void LETIMER0_IRQHandler(void)
 	{
 		// Set bit for timer
 		my_state_struct.event_bitmask |= TIMER_EVENT_MASK;
+		gecko_external_signal(TIMER_EVENT_MASK);
 		// Disable COMP1 interrupt
 		LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
 
@@ -177,10 +189,11 @@ void LETIMER0_IRQHandler(void)
 	// Check for COMP0 flag - should only be set during delay states
 	if(((flags & LETIMER_IF_COMP0) >> _LETIMER_IF_COMP0_SHIFT) == 1 )
 	{
-		if( (my_state_struct.current_state == STATE3_I2C_WAIT) || (my_state_struct.current_state == STATE1_I2C_POWER_UP) )
+		if( (my_state_struct.current_state == STATE4_I2C_WAIT) || (my_state_struct.current_state == STATE2_I2C_POWER_UP) )
 		{
 			// Set bit for delay
 			my_state_struct.event_bitmask |= DELAY_EVENT_MASK;
+			gecko_external_signal(DELAY_EVENT_MASK);
 			// Disable COMP0 interrupt
 			LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);
 		}

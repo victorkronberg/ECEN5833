@@ -15,7 +15,20 @@ void my_scheduler(myStateTypeDef *state_struct)
 {
 	switch (state_struct->current_state)
 	{
-		case STATE0_WAIT_FOR_TIMER:
+		case STATE0_WAIT_FOR_BLE:
+			if( ((state_struct->event_bitmask & BLE_EVENT_MASK) >> BLE_EVENT_MASK_POS) == 1 )
+			{
+				// Clear event bitmask
+				state_struct->event_bitmask &= ~BLE_EVENT_MASK;
+
+				// Enter temperature polling loop (STATE1-5) if BLE connection has occurred
+				scheduler_enter_temperature_polling_loop();
+
+				// Set next state
+				state_struct->next_state = STATE1_WAIT_FOR_TIMER;
+			}
+			break;
+		case STATE1_WAIT_FOR_TIMER:
 			if( ((state_struct->event_bitmask & TIMER_EVENT_MASK) >> TIMER_EVENT_MASK_POS) == 1 )
 			{
 				// Clear event bitmask
@@ -25,11 +38,11 @@ void my_scheduler(myStateTypeDef *state_struct)
 				scheduler_power_up_si7021();
 
 				// Set next state
-				state_struct->next_state = STATE1_I2C_POWER_UP;
+				state_struct->next_state = STATE2_I2C_POWER_UP;
 
 			}
 			break;
-		case STATE1_I2C_POWER_UP:
+		case STATE2_I2C_POWER_UP:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
 				// Clear event bitmask
@@ -39,10 +52,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 				scheduler_start_i2c_write();
 
 				// Set next state
-				state_struct->next_state = STATE2_I2C_WRITE;
+				state_struct->next_state = STATE3_I2C_WRITE;
 			}
 			break;
-		case STATE2_I2C_WRITE:
+		case STATE3_I2C_WRITE:
 			if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
 			{
 				// Clear event bitmask
@@ -52,10 +65,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 				scheduler_wait_for_temp_conversion();
 
 				// Set next state if complete
-				state_struct->next_state = STATE3_I2C_WAIT;
+				state_struct->next_state = STATE4_I2C_WAIT;
 			}
 			break;
-		case STATE3_I2C_WAIT:
+		case STATE4_I2C_WAIT:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
 				// Clear event bitmask
@@ -65,10 +78,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 				scheduler_start_i2c_read();
 
 				// Set next state if complete
-				state_struct->next_state = STATE4_I2C_READ;
+				state_struct->next_state = STATE5_I2C_READ;
 			}
 			break;
-		case STATE4_I2C_READ:
+		case STATE5_I2C_READ:
 			// If event flag set for read transfer complete, read temperature from return registers and calc temp
 			if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
 			{
@@ -78,7 +91,7 @@ void my_scheduler(myStateTypeDef *state_struct)
 				// Retrieve temperature from I2C buffer, set deepest sleep to EM3, and power down Si7021
 				scheduler_return_temp_then_wait();
 
-				state_struct->next_state = STATE0_WAIT_FOR_TIMER;
+				state_struct->next_state = STATE1_WAIT_FOR_TIMER;
 			}
 			break;
 		default:
@@ -137,7 +150,7 @@ void scheduler_return_temp_then_wait(void)
 	// Calculate temperature
 	temperature = si7021_return_last_temp();
 
-	LOG_INFO("Current temperature in degrees C: %f",temperature);
+	LOG_INFO("Current temperature in milli-degrees C: %d",temperature);
 
 	// Power down Si7021
 	disable_si7021_power();
@@ -145,3 +158,24 @@ void scheduler_return_temp_then_wait(void)
 	// Go back to deepest sleep to wait for next temperature reading
 	SLEEP_SleepBlockEnd(sleepEM2);
 }
+
+void scheduler_enter_temperature_polling_loop(void)
+{
+	// Reset period interrupt to occur every 3 seconds
+	reset_periodic_timer();
+}
+
+void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct)
+{
+	// Disable timer interrupts
+	disable_timer_interrupts();
+
+	// Clear any pending external event bitmasks
+	state_struct->event_bitmask = 0;
+
+	// Set state to waiting for BLE connection
+	state_struct->current_state = STATE0_WAIT_FOR_BLE;
+	state_struct->next_state = STATE0_WAIT_FOR_BLE;
+
+}
+

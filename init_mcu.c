@@ -157,7 +157,11 @@ static void initHFXO(void)
   CMU_HFXOInit_TypeDef hfxoInit = BSP_CLK_HFXO_INIT;
   // if Factory Cal exists in DEVINFO then use it above all (1st)
   if (0 == (DEVINFO->MODULEINFO & DEVINFO_MODULEINFO_HFXOCALVAL_MASK)) {
+#if defined(_SILICON_LABS_32B_SERIES_1)
     set_HFXO_CTUNE(DEVINFO_MODULEINFO_CRYSTALOSCCALVAL);
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+    set_HFXO_CTUNE(BSP_CLK_HFXO_CTUNE);
+#endif
   }
   // if User page has CTUNE from studio use that in 2nd place
 #if (MFG_CTUNE_EN == 1)

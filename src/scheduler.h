@@ -11,11 +11,12 @@
 #include "main.h"
 
 typedef enum states  {
-	STATE0_WAIT_FOR_TIMER,
-	STATE1_I2C_POWER_UP,
-	STATE2_I2C_WRITE,
-	STATE3_I2C_WAIT,
-	STATE4_I2C_READ,
+	STATE0_WAIT_FOR_BLE,
+	STATE1_WAIT_FOR_TIMER,
+	STATE2_I2C_POWER_UP,
+	STATE3_I2C_WRITE,
+	STATE4_I2C_WAIT,
+	STATE5_I2C_READ,
 	MY_NUM_STATES
 } myState;
 
@@ -69,5 +70,9 @@ void scheduler_start_i2c_read(void);
  * 							and power down Si7021.  To be called in STATE4_I2C_READ.
  */
 void scheduler_return_temp_then_wait(void);
+
+void scheduler_enter_temperature_polling_loop(void);
+
+void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
 
 #endif /* SRC_SCHEDULER_H_ */

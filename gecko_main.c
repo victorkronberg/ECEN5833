@@ -58,7 +58,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
     /* Handle events */
     switch (BGLIB_MSG_ID(evt->header)) {
-#if 0 // moved to application main.c
+	 // moved to application main.c
       /* This boot event is generated when the system boots up after reset.
        * Do not call any stack commands before receiving the boot event.
        * Here the system is set to start advertising immediately after boot procedure. */
@@ -69,12 +69,11 @@ bool gecko_update(struct gecko_cmd_packet* evt)
          * The next two parameters are minimum and maximum advertising interval, both in
          * units of (milliseconds * 1.6).
          * The last two parameters are duration and maxevents left as default. */
-        gecko_cmd_le_gap_set_advertise_timing(0, 160, 160, 0, 0);
+    	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, 160, 160, 0, 0));
 
         /* Start general advertising and enable connections. */
-        gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable);
+    	BTSTACK_CHECK_RESPONSEgecko_cmd_le_gap_start_advertising((0, le_gap_general_discoverable, le_gap_connectable_scannable));
         break;
-#endif
 
       case gecko_evt_le_connection_closed_id:
 
@@ -84,7 +83,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
           gecko_cmd_system_reset(2);
         } else {
           /* Restart advertising after client has disconnected */
-          gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable);
+        	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
         }
         break;
 
@@ -99,13 +98,13 @@ bool gecko_update(struct gecko_cmd_packet* evt)
           /* Set flag to enter to OTA mode */
           boot_to_dfu = 1;
           /* Send response to Write Request */
-          gecko_cmd_gatt_server_send_user_write_response(
+          BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_user_write_response(
             evt->data.evt_gatt_server_user_write_request.connection,
             gattdb_ota_control,
-            bg_err_success);
+            bg_err_success));
 
           /* Close connection to enter to DFU OTA mode */
-          gecko_cmd_le_connection_close(evt->data.evt_gatt_server_user_write_request.connection);
+          BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_close(evt->data.evt_gatt_server_user_write_request.connection));
         }
         break;
 

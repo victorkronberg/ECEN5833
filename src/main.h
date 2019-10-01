@@ -46,6 +46,7 @@
 #include "i2c.h"
 #include "Si7021.h"
 #include "scheduler.h"
+#include "gecko_ble.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4
@@ -60,6 +61,8 @@
 #define DELAY_EVENT_MASK_POS	(1)
 #define I2C_EVENT_MASK			(0x0004)
 #define I2C_EVENT_MASK_POS		(2)
+#define BLE_EVENT_MASK			(0x0008)
+#define BLE_EVENT_MASK_POS		(3)
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;

@@ -56,6 +56,10 @@ static void delayApproxOneSecond(void)
 int main(void)
 {
 
+	/* Event pointer for handling events */
+	struct gecko_cmd_packet* evt;
+
+	// Configure deepest sleep variable
 	SLEEP_EnergyMode_t sleep_mode;
 
   // Initialize device
@@ -82,7 +86,6 @@ int main(void)
   i2c_init();
 
 
-
   my_state_struct.current_state = STATE0_WAIT_FOR_TIMER;
 
   // Set deepest sleep mode
@@ -93,38 +96,30 @@ int main(void)
   CORE_DECLARE_IRQ_STATE;
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
-  // gecko_init(&config);
+  gecko_init(&config);
   /* Infinite loop */
-  while (1) {
+  while (1)
+  {
 
-	  // Check for event on wake
-	  if(my_state_struct.event_bitmask == 0)
-	  {
-		  // Wait for event
-		  sleep_mode = SLEEP_Sleep();
-		  LOG_INFO("Last sleep mode was %d, we are in state %d",sleep_mode,my_state_struct.current_state);
-	  }
-	  else
-	  {
-		  __disable_irq();
+		// Check for external event
+		if(my_state_struct.event_bitmask != 0)
+		{
+			__disable_irq();
 
-		  // Call scheduler
-		  my_scheduler(&my_state_struct);
+			// Call scheduler
+			my_scheduler(&my_state_struct);
 
-		  __enable_irq();
-	  }
+			__enable_irq();
+		}
+		else
+		{
+			/* Check for stack event. */
+			// BLE sleep
+			evt = gecko_wait_event();
+
+			gecko_ble_update(evt,&my_state_struct);
+		}
 
   }
 }
 
-
-
-/*if(((TIMER_EVENT_MASK & event_bitmask) >> TIMER_EVENT_MASK_POS) == 1)
-{
-	  disable_letimer();
-	  temperature = read_temp();
-	  // Clear event bitmask
-	  event_bitmask &= ~TIMER_EVENT_MASK;
-	  reset_timer_interrupt();
-}
-*/

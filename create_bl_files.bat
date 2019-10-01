@@ -5,14 +5,14 @@
 
 :: use PATH_GCCARM env var to override default path for gcc-arm
 if "%PATH_GCCARM%"=="" (
-  set OBJCOPY="C:\SiliconLabs\SimplicityStudio\v4_2\developer\toolchains\gnu_arm\4.9_2015q3\bin\arm-none-eabi-objcopy.exe"
+  set OBJCOPY="C:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\gnu_arm\4.9_2015q3\bin\arm-none-eabi-objcopy.exe"
 ) else (
   set OBJCOPY=%PATH_GCCARM%\bin\arm-none-eabi-objcopy.exe
 )
 
 :: use PATH_SCMD env var to override default path for Simplicity Commander
 if "%PATH_SCMD%"=="" (
-  set COMMANDER="C:\SiliconLabs\SimplicityStudio\v4_2\developer\adapter_packs\commander\commander.exe"
+  set COMMANDER="C:\SiliconLabs\SimplicityStudio\v4\developer\adapter_packs\commander\commander.exe"
 ) else (
   set COMMANDER=%PATH_SCMD%\commander.exe
 )
