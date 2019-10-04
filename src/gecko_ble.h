@@ -32,16 +32,56 @@
 uint8_t conn_handle;
 volatile int16_t global_tx_power;
 
+/**
+ * [gecko_ble_update]
+ * @description:  Handles BLE-triggered events
+ * @param        evt [Command packet containing event ID and associated data]
+ * @return           [True: Triggering event was handled
+ *                    False: Triggering event was not handled]
+ */
 bool gecko_ble_update(struct gecko_cmd_packet* evt);
 
+/**
+ * [gecko_update]
+ * @description:  Handles BLE-triggered events related to system boot,
+ *                dropped connection, and OTA events.  Called from within
+ *                gecko_ble_update.
+ * @param        evt [Command packet containing event ID and associated data]
+ * @return           [True: Triggering event was handled
+ *                    False: Triggering event was not handled]
+ */
 bool gecko_update(struct gecko_cmd_packet* evt);
 
+/**
+ * [gecko_ble_send_temperature]
+ * @description:  Converts floating point temperature to bitstream for BLE
+ *                packet.  Sends temperature "indication" to all listening
+ *                clients.
+ * @param        temperature [Floating point temperature in degrees C]
+ */
 void gecko_ble_send_temperature(float temperature);
 
+/**
+ * [gecko_ble_get_rssi]
+ * @description:  Initiates RSSI retrieval using global connection handle
+ */
 void gecko_ble_get_rssi(void);
 
+/**
+ * [gecko_ble_dynamic_tx_power_update]
+ * @description:  Updates the global TX power based on given RSSI value.
+ *                First, it calculates transmit power from RSSI in 0.1dBm units,
+ *                then uses that value to call gecko_ble_update_tx_power.
+ * @param        rssi [RSSI value - signal strength]
+ */
 void gecko_ble_dynamic_tx_power_update(int8_t rssi);
 
+/**
+ * [gecko_ble_update_tx_power]
+ * @description:  Updates max system TX power.  Halts system prior to updating
+ *                power based on given TX power, then resumes system.
+ * @param        power [TX Power in units of 0.1dBm]
+ */
 void gecko_ble_update_tx_power(int16_t power);
 
 

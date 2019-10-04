@@ -127,7 +127,7 @@ void my_scheduler(myStateTypeDef *state_struct)
 
 	if(state_struct->current_state != state_struct->next_state)
 	{
-		LOG_INFO("State transitioned from state %d to %d",state_struct->current_state,state_struct->next_state);
+		//LOG_INFO("State transitioned from state %d to %d",state_struct->current_state,state_struct->next_state);
 		state_struct->current_state = state_struct->next_state;
 	}
 
@@ -215,6 +215,4 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct)
 	// Set state to waiting for BLE connection
 	state_struct->current_state = STATE0_WAIT_FOR_BLE;
 	state_struct->next_state = STATE0_WAIT_FOR_BLE;
-
 }
-

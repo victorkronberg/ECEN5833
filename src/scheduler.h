@@ -75,8 +75,19 @@ void scheduler_start_i2c_read(void);
  */
 void scheduler_return_temp_then_wait(void);
 
+/**
+ * [scheduler_enter_temperature_polling_loop]
+ * @description:	Re-enters the temperature polling loop of the state machine.
+ * 								To be called when a BLE connection event occurs.
+ */
 void scheduler_enter_temperature_polling_loop(void);
 
+/**
+ * [scheduler_exit_temperature_polling_loop]
+ * @description:	Exits the temperature polling loop of the state machine.
+ * 								To be called when a BLE connection is dropped.
+ * @param        state_struct [Struct containing context for the state machine]
+ */
 void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
 
 #endif /* SRC_SCHEDULER_H_ */

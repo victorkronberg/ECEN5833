@@ -16,7 +16,7 @@ struct gecko_msg_le_connection_get_rssi_rsp_t *rssi_rsp;
 bool gecko_ble_update(struct gecko_cmd_packet* evt)
 {
 
-	LOG_INFO("BLE event %#08x occurred",evt->header);
+	//LOG_INFO("BLE event %#08x occurred",evt->header);
 
 	bool handled;
 	int16_t power;
@@ -27,14 +27,11 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 	// If not already handled, there is an open connection
 	if(!handled)
 	{
-		// Calculate and update power if rssi is available
-
 		handled = 1;
 		switch BGLIB_MSG_ID(evt->header)
 		{
 			// New connection has been opened
 			case gecko_evt_le_connection_opened_id:
-
 				// Store the connection handle
 				conn_handle = evt->data.evt_le_connection_opened.connection;
 
@@ -84,13 +81,13 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 				}
 				break;
 
+			// RSSI ready to be read
 			case gecko_evt_le_connection_rssi_id:
 				// Ensure results are valid
 				if(evt->data.evt_le_connection_rssi.status == 0)
 				{
 					// Retrieve RSSI an set TX Power based on RSSI
 					gecko_ble_dynamic_tx_power_update(evt->data.evt_le_connection_rssi.rssi);
-
 				}
 				break;
 
@@ -210,6 +207,7 @@ void gecko_ble_get_rssi(void)
 
 void gecko_ble_dynamic_tx_power_update(int8_t rssi)
 {
+	// Check range of RSSI and assign appropriate TX power
 	if(rssi > -35)
 	{
 		global_tx_power = TXPOWER_MIN;
@@ -239,7 +237,9 @@ void gecko_ble_dynamic_tx_power_update(int8_t rssi)
 		global_tx_power = TXPOWER_MAX;
 	}
 
-	LOG_INFO("TX power updated with a RSSI of %d",rssi);
+	//LOG_INFO("TX power updated with a RSSI of %d",rssi);
+
+	// Update TX power based on calculated TX power value
 	gecko_ble_update_tx_power(global_tx_power);
 
 
@@ -255,7 +255,7 @@ void gecko_ble_update_tx_power(int16_t power)
 	// Update power
 	rsp = gecko_cmd_system_set_tx_power(power);
 
-	LOG_INFO("TX power updated with a Power setting of %d",rsp->set_power);
+	//LOG_INFO("TX power updated with a Power setting of %d",rsp->set_power);
 
 	// Resume system
 	gecko_cmd_system_halt(0);
