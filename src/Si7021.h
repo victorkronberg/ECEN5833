@@ -54,6 +54,6 @@ void si7021_init_i2c_temp_read(void);
  *               converts it into milli-degrees C.
  * @return        [Temperature in degrees C (floating point)]
  */
-uint32_t si7021_return_last_temp(void);
+float si7021_return_last_temp(void);
 
 #endif /* SRC_SI7021_H_ */

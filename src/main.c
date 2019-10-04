@@ -19,8 +19,6 @@ const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM3;
 const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM2;
 #endif
 
-myStateTypeDef my_state_struct;
-
 // Gecko configuration parameters (see gecko_configuration.h)
 static const gecko_configuration_t config = {
   .config_flags = 0,
@@ -86,17 +84,18 @@ int main(void)
   i2c_init();
 
 
-  my_state_struct.current_state = STATE0_WAIT_FOR_TIMER;
+  my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
+  my_state_struct.next_state = STATE0_WAIT_FOR_BLE;
 
   // Set deepest sleep mode
   SLEEP_SleepBlockBegin(blocked_sleep_mode);
 
   //init_timer_interrupt();
 
-  CORE_DECLARE_IRQ_STATE;
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
   gecko_init(&config);
+
   /* Infinite loop */
   while (1)
   {
@@ -117,7 +116,14 @@ int main(void)
 			// BLE sleep
 			evt = gecko_wait_event();
 
-			gecko_ble_update(evt,&my_state_struct);
+			LOG_INFO("Wake event");
+
+			__disable_irq();
+
+			gecko_ble_update(evt);
+
+			__enable_irq();
+
 		}
 
   }

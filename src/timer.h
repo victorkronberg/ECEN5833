@@ -15,7 +15,7 @@
 // LED timing in seconds
 #define LEDOnTime			(175)	// Max = 1000 milliseconds
 #define LEDBlinkPeriod		(2250)	// Max = 7000 milliseconds
-#define TimerPeriod			(3000)	// Three second timer interval
+#define TimerPeriod			(1000)	// One second timer interval
 
 #define MAX_COUNTER			(0xFFFF)
 #define LFXO_FREQUENCY		(32768)
@@ -83,6 +83,8 @@ void init_letimer(void);
  * @description: Resets periodic 3 sec interrupt timer
  */
 void reset_periodic_timer(void);
+
+void disable_timer_interrupts(void);
 
 /**
  * [delay_ms]

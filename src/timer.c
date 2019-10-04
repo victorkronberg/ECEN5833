@@ -13,11 +13,15 @@ extern myStateTypeDef my_state_struct;
 
 uint32_t overflow_counter;
 
+// Periodic counter used to distinguish between 1 and 3 second wakeups
+uint32_t periodic_counter;
+
 
 // Initializes oscillator and clock tree for letimer
 void init_letimer(void)
 {
 	overflow_counter = 0;
+	periodic_counter = 0;
 
 	letimer_struct.period_in_ms = TimerPeriod;
 
@@ -48,6 +52,9 @@ void init_letimer(void)
 	enable_letimer();
 
 	reset_periodic_timer();
+
+	// Disable timer-based interrupts until BLE connection occurs
+	disable_timer_interrupts();
 
 	return;
 }
@@ -93,6 +100,9 @@ void disable_timer_interrupts(void)
 	// Clear any pending timer interrupt flags
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
+
+	// Reset periodic counter
+	periodic_counter = 0;
 
 	// Disable interrupts
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
@@ -178,11 +188,25 @@ void LETIMER0_IRQHandler(void)
 	// Check for COMP1 flag - periodic interrupt
 	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )
 	{
-		// Set bit for timer
-		my_state_struct.event_bitmask |= TIMER_EVENT_MASK;
-		gecko_external_signal(TIMER_EVENT_MASK);
-		// Disable COMP1 interrupt
-		LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
+		// Increment periodic counter
+		periodic_counter++;
+
+		// Check if we are at three second interrupt
+		if(periodic_counter >= 3)
+		{
+			// Set mask to handle periodic timer interrupt
+			gecko_external_signal(TIMER_EVENT_MASK);
+			// Disable COMP1 interrupt
+			LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
+
+			// Reset periodic counter
+			periodic_counter = 0;
+		}
+		else
+		{
+			// Set mask to check for RSSI
+			gecko_external_signal(CHECK_RSSI_EVENT_MASK);
+		}
 
 	}
 
@@ -192,7 +216,7 @@ void LETIMER0_IRQHandler(void)
 		if( (my_state_struct.current_state == STATE4_I2C_WAIT) || (my_state_struct.current_state == STATE2_I2C_POWER_UP) )
 		{
 			// Set bit for delay
-			my_state_struct.event_bitmask |= DELAY_EVENT_MASK;
+			//my_state_struct.event_bitmask |= DELAY_EVENT_MASK;
 			gecko_external_signal(DELAY_EVENT_MASK);
 			// Disable COMP0 interrupt
 			LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);

@@ -93,7 +93,7 @@ void I2C0_IRQHandler(void)
 	if(ret == i2cTransferDone)
 	{
 		// Set bit for I2C event complete
-		my_state_struct.event_bitmask |= I2C_EVENT_MASK;
+		//my_state_struct.event_bitmask |= I2C_EVENT_MASK;
 		gecko_external_signal(I2C_EVENT_MASK);
 
 		// Disable interrupts

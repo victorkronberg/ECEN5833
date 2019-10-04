@@ -38,6 +38,7 @@
 #include "gpio.h"
 #include "sleep.h"
 #include "em_core.h"
+#include "infrastructure.h"
 
 /* User files */
 #include "timer.h"
@@ -55,17 +56,23 @@
 #define EnergyMode3	(1)
 
 // Event bitmasks
-#define TIMER_EVENT_MASK		(0x0001)
-#define TIMER_EVENT_MASK_POS	(0)
-#define DELAY_EVENT_MASK		(0x0002)
-#define DELAY_EVENT_MASK_POS	(1)
-#define I2C_EVENT_MASK			(0x0004)
-#define I2C_EVENT_MASK_POS		(2)
-#define BLE_EVENT_MASK			(0x0008)
-#define BLE_EVENT_MASK_POS		(3)
+#define TIMER_EVENT_MASK			(0x0001)
+#define TIMER_EVENT_MASK_POS		(0)
+#define DELAY_EVENT_MASK			(0x0002)
+#define DELAY_EVENT_MASK_POS		(1)
+#define I2C_EVENT_MASK				(0x0004)
+#define I2C_EVENT_MASK_POS			(2)
+#define BLE_EVENT_MASK				(0x0008)
+#define BLE_EVENT_MASK_POS			(3)
+#define EXIT_EVENT_MASK				(0x0010)
+#define EXIT_EVENT_MASK_POS			(4)
+#define CHECK_RSSI_EVENT_MASK		(0x0020)
+#define CHECK_RSSI_EVENT_MASK_POS	(5)
+
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;
+
 
 
 #endif /* SRC_MAIN_H_ */

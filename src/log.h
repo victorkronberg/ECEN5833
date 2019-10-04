@@ -8,6 +8,7 @@
 #ifndef SRC_LOG_H_
 #define SRC_LOG_H_
 #include "stdio.h"
+#include "main.h"
 #include <inttypes.h>
 
 /**

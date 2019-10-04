@@ -10,9 +10,33 @@
 
 float temperature;
 
-
 void my_scheduler(myStateTypeDef *state_struct)
 {
+
+	// Handle events not tied to a given state first
+
+	// Check for exit condition
+	if( ((state_struct->event_bitmask & EXIT_EVENT_MASK) >> EXIT_EVENT_MASK_POS) == 1 )
+	{
+		scheduler_exit_temperature_polling_loop(state_struct);
+	}
+
+	// Check for RSSI check event - does not impact state
+	if( ((state_struct->event_bitmask & CHECK_RSSI_EVENT_MASK) >> CHECK_RSSI_EVENT_MASK_POS) == 1 )
+	{
+		// Clear event bitmask
+		state_struct->event_bitmask &= ~CHECK_RSSI_EVENT_MASK;
+
+		gecko_ble_get_rssi();
+
+		// Reset period interrupt
+		reset_periodic_timer();
+
+	}
+
+
+	// Handle state-driven events
+
 	switch (state_struct->current_state)
 	{
 		case STATE0_WAIT_FOR_BLE:
@@ -33,6 +57,9 @@ void my_scheduler(myStateTypeDef *state_struct)
 			{
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~TIMER_EVENT_MASK;
+
+				// Enable an RSSI retrieval
+				gecko_ble_get_rssi();
 
 				// Reset timer, power up si7021, and set delay to wait for power-up
 				scheduler_power_up_si7021();
@@ -147,13 +174,16 @@ void scheduler_start_i2c_read(void)
 
 void scheduler_return_temp_then_wait(void)
 {
-	// Calculate temperature
+	// Calculate temperature from last measured value
 	temperature = si7021_return_last_temp();
 
-	LOG_INFO("Current temperature in milli-degrees C: %d",temperature);
+	LOG_INFO("Current temperature in milli-degrees C: %f",temperature);
 
 	// Power down Si7021
 	disable_si7021_power();
+
+	// Send temperature out BLE
+	gecko_ble_send_temperature(temperature);
 
 	// Go back to deepest sleep to wait for next temperature reading
 	SLEEP_SleepBlockEnd(sleepEM2);
@@ -172,6 +202,15 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct)
 
 	// Clear any pending external event bitmasks
 	state_struct->event_bitmask = 0;
+
+	// Find out if sleep block needs to be removed
+	SLEEP_EnergyMode_t deepest_sleep = SLEEP_LowestEnergyModeGet();
+
+	// Remove block if needed
+	if(deepest_sleep == sleepEM1)
+	{
+		SLEEP_SleepBlockEnd(sleepEM2);
+	}
 
 	// Set state to waiting for BLE connection
 	state_struct->current_state = STATE0_WAIT_FOR_BLE;

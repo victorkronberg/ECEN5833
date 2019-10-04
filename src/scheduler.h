@@ -20,12 +20,16 @@ typedef enum states  {
 	MY_NUM_STATES
 } myState;
 
-typedef struct	{
+typedef struct	StateStruct {
 	myState current_state;
 	myState next_state;
 	uint32_t event_bitmask;
 	uint32_t periodic_timer0;
 } myStateTypeDef;
+
+
+// Global state structure
+myStateTypeDef my_state_struct;
 
 /**
  * [my_scheduler]
