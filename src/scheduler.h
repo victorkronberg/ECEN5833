@@ -1,8 +1,10 @@
 /*
  * scheduler.h
  *
+ * Header file for scheduler
+ *
  *  Created on: Sep 21, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #ifndef SRC_SCHEDULER_H_

@@ -81,6 +81,7 @@ void reset_periodic_timer(void)
 
 	uint32_t timer_delta;
 
+	__disable_irq();
 	// Calculate timer value based on current CNT and time to next interrupt
 	timer_delta = calculate_timer(TimerPeriod);
 
@@ -92,11 +93,13 @@ void reset_periodic_timer(void)
 
 	// Enable LETIMER COMP1 interrupt
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP1);
+	__enable_irq();
 
 }
 
 void disable_timer_interrupts(void)
 {
+	__disable_irq();
 	// Clear any pending timer interrupt flags
 	uint32_t flags = LETIMER_IntGet(LETIMER0);
 	LETIMER_IntClear(LETIMER0, flags);
@@ -107,6 +110,7 @@ void disable_timer_interrupts(void)
 	// Disable interrupts
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP1);
 	LETIMER_IntDisable(LETIMER0,LETIMER_IEN_COMP0);
+	__enable_irq();
 }
 
 
@@ -114,6 +118,7 @@ void delay_ms(uint32_t time_in_ms)
 {
 	uint32_t timer_delta;
 
+	__disable_irq();
 	// Calculate timer value based on current CNT and time to next interrupt
 	timer_delta = calculate_timer(time_in_ms);
 
@@ -125,6 +130,7 @@ void delay_ms(uint32_t time_in_ms)
 
 	// Enable LETIMER Interrupts on COMP0
 	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP0);
+	__enable_irq();
 
 	return;
 

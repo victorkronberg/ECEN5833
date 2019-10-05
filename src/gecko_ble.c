@@ -1,8 +1,12 @@
 /*
  * gecko_ble.c
  *
+ * BLE stack interface.  Contains all functions which interact directly with
+ * Silicon Labs BLE Stack.  Utilized code from Silicon Labs example code, specifically
+ * Health Thermometer example. Also utilized code provided by CU Boulder.
+ *
  *  Created on: Oct 1, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #include "gecko_ble.h"
@@ -19,7 +23,6 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 	//LOG_INFO("BLE event %#08x occurred",evt->header);
 
 	bool handled;
-	int16_t power;
 
 	// Initially handle events related to advertising and resetting
 	handled = gecko_update(evt);
@@ -49,8 +52,10 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 
 			// External event trigger
 			case gecko_evt_system_external_signal_id:
+				__disable_irq();
 				// Set external events for processing
 				my_state_struct.event_bitmask |= evt->data.evt_system_external_signal.extsignals;
+				__enable_irq();
 
 				break;
 
@@ -68,15 +73,19 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 				{
 				  if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x02)
 				  {
+					  __disable_irq();
 					  // Enable temperature polling
 					  my_state_struct.event_bitmask |= BLE_EVENT_MASK;
-					  LOG_INFO("BLE Mask has been set");
+					  __enable_irq();
+					  //LOG_INFO("BLE Mask has been set");
 
 				  } else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x00)
 				  {
 
+					  __disable_irq();
 					// Disable temperature polling
 					  my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
+					  __enable_irq();
 				  }
 				}
 				break;
@@ -121,7 +130,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
     	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, ADVERTISE_INTERVAL_250MS, ADVERTISE_INTERVAL_250MS, 0, 0));
 
     	// Set tx power to 0dB
-		gecko_ble_update_tx_power(0);
+		gecko_ble_update_tx_power(TXPOWER_0DB);
 
         /* Start general advertising and enable connections. */
     	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
@@ -136,7 +145,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
         } else {
 
         	// Reset tx power to 0dB
-        	gecko_ble_update_tx_power(0);
+        	gecko_ble_update_tx_power(TXPOWER_0DB);
 
           /* Restart advertising after client has disconnected */
         	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
@@ -207,40 +216,41 @@ void gecko_ble_get_rssi(void)
 
 void gecko_ble_dynamic_tx_power_update(int8_t rssi)
 {
+	int16_t tx_power;
 	// Check range of RSSI and assign appropriate TX power
 	if(rssi > -35)
 	{
-		global_tx_power = TXPOWER_MIN;
+		tx_power = TXPOWER_MIN;
 	}
 	else if(rssi > -45)
 	{
-		global_tx_power = TXPOWER_NEG_20DB;
+		tx_power = TXPOWER_NEG_20DB;
 	}
 	else if(rssi > -55)
 	{
-		global_tx_power = TXPOWER_NEG_15DB;
+		tx_power = TXPOWER_NEG_15DB;
 	}
 	else if(rssi > -65)
 	{
-		global_tx_power = TXPOWER_NEG_5DB;
+		tx_power = TXPOWER_NEG_5DB;
 	}
 	else if(rssi > -75)
 	{
-		global_tx_power = TXPOWER_0DB;
+		tx_power = TXPOWER_0DB;
 	}
 	else if(rssi > -85)
 	{
-		global_tx_power = TXPOWER_POS_5DB;
+		tx_power = TXPOWER_POS_5DB;
 	}
 	else
 	{
-		global_tx_power = TXPOWER_MAX;
+		tx_power = TXPOWER_MAX;
 	}
 
 	//LOG_INFO("TX power updated with a RSSI of %d",rssi);
 
 	// Update TX power based on calculated TX power value
-	gecko_ble_update_tx_power(global_tx_power);
+	gecko_ble_update_tx_power(tx_power);
 
 
 }

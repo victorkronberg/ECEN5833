@@ -1,5 +1,11 @@
 /*
- * Main heading
+ * main.c
+ *
+ * Main function
+ *
+ * Created on: September 9, 2019
+ *  Author: Victor Kronberg
+ *
  */
 
 #include "main.h"
@@ -103,12 +109,12 @@ int main(void)
 		// Check for external event
 		if(my_state_struct.event_bitmask != 0)
 		{
-			__disable_irq();
+			//__disable_irq();
 
 			// Call scheduler
 			my_scheduler(&my_state_struct);
 
-			__enable_irq();
+			//__enable_irq();
 		}
 		else
 		{
@@ -116,16 +122,15 @@ int main(void)
 			// BLE sleep
 			evt = gecko_wait_event();
 
-			LOG_INFO("Wake event");
+			//LOG_INFO("Wake event");
 
-			__disable_irq();
+			//__disable_irq();
 
 			gecko_ble_update(evt);
 
-			__enable_irq();
+			//__enable_irq();
 
 		}
 
   }
 }
-

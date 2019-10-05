@@ -1,14 +1,14 @@
 /*
  * scheduler.c
  *
+ * State-machine for handling event-driven processes external to BLE
+ *
  *  Created on: Sep 21, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 
 #include "scheduler.h"
-
-float temperature;
 
 void my_scheduler(myStateTypeDef *state_struct)
 {
@@ -42,8 +42,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE0_WAIT_FOR_BLE:
 			if( ((state_struct->event_bitmask & BLE_EVENT_MASK) >> BLE_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~BLE_EVENT_MASK;
+				__enable_irq();
 
 				// Enter temperature polling loop (STATE1-5) if BLE connection has occurred
 				scheduler_enter_temperature_polling_loop();
@@ -55,8 +57,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE1_WAIT_FOR_TIMER:
 			if( ((state_struct->event_bitmask & TIMER_EVENT_MASK) >> TIMER_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~TIMER_EVENT_MASK;
+				__enable_irq();
 
 				// Enable an RSSI retrieval
 				gecko_ble_get_rssi();
@@ -72,8 +76,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE2_I2C_POWER_UP:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
+				__enable_irq();
 
 				// Set deepest sleep state to EM1 and begin i2c write
 				scheduler_start_i2c_write();
@@ -85,8 +91,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE3_I2C_WRITE:
 			if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
+				__enable_irq();
 
 				// Set deepest sleep state to EM3 and set delay timer to wait for conversion
 				scheduler_wait_for_temp_conversion();
@@ -98,8 +106,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 		case STATE4_I2C_WAIT:
 			if( ((state_struct->event_bitmask & DELAY_EVENT_MASK) >> DELAY_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~DELAY_EVENT_MASK;
+				__enable_irq();
 
 				// Set deepest sleep to EM1 and start i2c read
 				scheduler_start_i2c_read();
@@ -112,8 +122,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 			// If event flag set for read transfer complete, read temperature from return registers and calc temp
 			if( ((state_struct->event_bitmask & I2C_EVENT_MASK) >> I2C_EVENT_MASK_POS) == 1 )
 			{
+				__disable_irq();
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~I2C_EVENT_MASK;
+				__enable_irq();
 
 				// Retrieve temperature from I2C buffer, set deepest sleep to EM3, and power down Si7021
 				scheduler_return_temp_then_wait();
@@ -174,10 +186,11 @@ void scheduler_start_i2c_read(void)
 
 void scheduler_return_temp_then_wait(void)
 {
+	float temperature;
 	// Calculate temperature from last measured value
 	temperature = si7021_return_last_temp();
 
-	LOG_INFO("Current temperature in milli-degrees C: %f",temperature);
+	//LOG_INFO("Current temperature in degrees C: %f",temperature);
 
 	// Power down Si7021
 	disable_si7021_power();
@@ -200,8 +213,10 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct)
 	// Disable timer interrupts
 	disable_timer_interrupts();
 
+	__disable_irq();
 	// Clear any pending external event bitmasks
 	state_struct->event_bitmask = 0;
+	__enable_irq();
 
 	// Find out if sleep block needs to be removed
 	SLEEP_EnergyMode_t deepest_sleep = SLEEP_LowestEnergyModeGet();

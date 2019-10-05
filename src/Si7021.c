@@ -3,7 +3,7 @@
  * Si7021 initialization and interface
  *
  *  Created on: Sep 14, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #include "Si7021.h"

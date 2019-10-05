@@ -3,7 +3,7 @@
  * I2C initialization and control for EFR32BG13
  *
  *  Created on: Sep 15, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #ifndef SRC_I2C_H_

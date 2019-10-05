@@ -1,6 +1,8 @@
 /*
  * gecko_ble.h
  *
+ * BLE interface header
+ *
  *  Created on: Oct 1, 2019
  *      Author: vkronber
  */
@@ -30,7 +32,6 @@
 
 // Global variable containing connection handle
 uint8_t conn_handle;
-volatile int16_t global_tx_power;
 
 /**
  * [gecko_ble_update]

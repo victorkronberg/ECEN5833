@@ -1,8 +1,10 @@
 /*
  * main.h
  *
+ * Main header file
+ *
  *  Created on: Sep 9, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #ifndef SRC_MAIN_H_
