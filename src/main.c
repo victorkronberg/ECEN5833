@@ -109,12 +109,9 @@ int main(void)
 		// Check for external event
 		if(my_state_struct.event_bitmask != 0)
 		{
-			//__disable_irq();
-
 			// Call scheduler
 			my_scheduler(&my_state_struct);
 
-			//__enable_irq();
 		}
 		else
 		{
@@ -124,12 +121,7 @@ int main(void)
 
 			//LOG_INFO("Wake event");
 
-			//__disable_irq();
-
 			gecko_ble_update(evt);
-
-			//__enable_irq();
-
 		}
 
   }
