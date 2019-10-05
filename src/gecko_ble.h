@@ -46,7 +46,8 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt);
  * [gecko_update]
  * @description:  Handles BLE-triggered events related to system boot,
  *                dropped connection, and OTA events.  Called from within
- *                gecko_ble_update.
+ *                gecko_ble_update. Based on Silicon Labs empty Blue Gecko
+ *                Bluetoot project.
  * @param        evt [Command packet containing event ID and associated data]
  * @return           [True: Triggering event was handled
  *                    False: Triggering event was not handled]
@@ -57,7 +58,8 @@ bool gecko_update(struct gecko_cmd_packet* evt);
  * [gecko_ble_send_temperature]
  * @description:  Converts floating point temperature to bitstream for BLE
  *                packet.  Sends temperature "indication" to all listening
- *                clients.
+ *                clients. Based on Silicon Labs Health Thermometer Blue
+ *                Gecko example.
  * @param        temperature [Floating point temperature in degrees C]
  */
 void gecko_ble_send_temperature(float temperature);
