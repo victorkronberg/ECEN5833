@@ -210,8 +210,8 @@ void LETIMER0_IRQHandler(void)
 		}
 		else
 		{
-			// Set mask to check for RSSI
-			gecko_external_signal(CHECK_RSSI_EVENT_MASK);
+			// Set mask for 1 HZ event
+			gecko_external_signal(ONE_HZ_EVENT_MASK);
 		}
 
 	}

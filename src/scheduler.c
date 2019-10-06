@@ -22,15 +22,12 @@ void my_scheduler(myStateTypeDef *state_struct)
 	}
 
 	// Check for RSSI check event - does not impact state
-	if( ((state_struct->event_bitmask & CHECK_RSSI_EVENT_MASK) >> CHECK_RSSI_EVENT_MASK_POS) == 1 )
+	if( ((state_struct->event_bitmask & ONE_HZ_EVENT_MASK) >> ONE_HZ_EVENT_MASK_POS) == 1 )
 	{
 		// Clear event bitmask
-		state_struct->event_bitmask &= ~CHECK_RSSI_EVENT_MASK;
+		state_struct->event_bitmask &= ~ONE_HZ_EVENT_MASK;
 
-		gecko_ble_get_rssi();
-
-		// Reset period interrupt
-		reset_periodic_timer();
+		scheduler_one_hz_event_handler();
 
 	}
 
@@ -61,9 +58,6 @@ void my_scheduler(myStateTypeDef *state_struct)
 				// Clear event bitmask
 				state_struct->event_bitmask &= ~TIMER_EVENT_MASK;
 				__enable_irq();
-
-				// Enable an RSSI retrieval
-				gecko_ble_get_rssi();
 
 				// Reset timer, power up si7021, and set delay to wait for power-up
 				scheduler_power_up_si7021();
@@ -147,8 +141,8 @@ void my_scheduler(myStateTypeDef *state_struct)
 
 void scheduler_power_up_si7021(void)
 {
-	// Reset period interrupt
-	reset_periodic_timer();
+
+	scheduler_one_hz_event_handler();
 
 	// Call I2C power-up
 	enable_si7021_power();
@@ -230,4 +224,16 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct)
 	// Set state to waiting for BLE connection
 	state_struct->current_state = STATE0_WAIT_FOR_BLE;
 	state_struct->next_state = STATE0_WAIT_FOR_BLE;
+}
+
+void scheduler_one_hz_event_handler(void)
+{
+	// Set event to retrieve RSSI value
+	gecko_ble_get_rssi();
+
+	// Update LCD display
+	displayUpdate();
+
+	// Reset period interrupt
+	reset_periodic_timer();
 }

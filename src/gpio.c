@@ -45,3 +45,14 @@ void gpioLed1SetOff()
 {
 	GPIO_PinOutClear(LED1_port,LED1_pin);
 }
+
+
+void gpioEnableDisplay(void)
+{
+
+}
+
+void gpioSetDisplayExtcomin(bool high)
+{
+
+}

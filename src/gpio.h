@@ -13,6 +13,10 @@
 #define pin4	(4)
 #define pin5	(5)
 
+// GPIO related LCD display #defines
+#define GPIO_SET_DISPLAY_EXT_COMIN_IMPLEMENTED 	(1)
+#define GPIO_DISPLAY_SUPPORT_IMPLEMENTED		(1)
+
 /**
  * @description:  Initialize GPIO pins for LED0 and 1
  */
@@ -37,4 +41,9 @@ void gpioLed1SetOn();
  * @description:  Turn off LED1
  */
 void gpioLed1SetOff();
+
+void gpioEnableDisplay(void);
+
+void gpioSetDisplayExtcomin(bool high);
+
 #endif /* SRC_GPIO_H_ */

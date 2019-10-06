@@ -89,6 +89,8 @@ int main(void)
 
   i2c_init();
 
+  displayInit();
+
 
   my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
   my_state_struct.next_state = STATE0_WAIT_FOR_BLE;

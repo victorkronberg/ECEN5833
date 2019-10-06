@@ -115,45 +115,57 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 	bool handled = true;
 
     /* Handle events */
-    switch (BGLIB_MSG_ID(evt->header)) {
+	switch (BGLIB_MSG_ID(evt->header)) {
 	 // moved to application main.c
       /* This boot event is generated when the system boots up after reset.
        * Do not call any stack commands before receiving the boot event.
        * Here the system is set to start advertising immediately after boot procedure. */
-      case gecko_evt_system_boot_id:
+		case gecko_evt_system_boot_id:
 
-        /* Set advertising parameters. 100ms advertisement interval.
-         * The first parameter is advertising set handle
-         * The next two parameters are minimum and maximum advertising interval, both in
-         * units of (milliseconds * 1.6).
-         * The last two parameters are duration and maxevents left as default. */
-    	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, ADVERTISE_INTERVAL_250MS, ADVERTISE_INTERVAL_250MS, 0, 0));
+			/* Set advertising parameters. 100ms advertisement interval.
+			 * The first parameter is advertising set handle
+			 * The next two parameters are minimum and maximum advertising interval, both in
+			 * units of (milliseconds * 1.6).
+			 * The last two parameters are duration and maxevents left as default. */
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, ADVERTISE_INTERVAL_250MS, ADVERTISE_INTERVAL_250MS, 0, 0));
 
-    	// Set tx power to 0dB
-		gecko_ble_update_tx_power(TXPOWER_0DB);
+			// Set tx power to 0dB
+			gecko_ble_update_tx_power(TXPOWER_0DB);
 
-        /* Start general advertising and enable connections. */
-    	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
-        break;
+			/* Start general advertising and enable connections. */
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
+			break;
+
+      // Advertising timed out if timeout specified - restart advertising and log it
+      case gecko_evt_le_gap_adv_timeout_id:
+
+    	  	LOG_INFO("Advertising timed out, restarting advertisement");
+
+    	  	/* Start general advertising and enable connections. */
+    	  	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
+
+    	  	break;
 
       case gecko_evt_le_connection_closed_id:
 
-        /* Check if need to boot to dfu mode */
-        if (boot_to_dfu) {
-          /* Enter to DFU OTA mode */
-          gecko_cmd_system_reset(2);
-        } else {
+			/* Check if need to boot to dfu mode */
+			if (boot_to_dfu)
+			{
+			  /* Enter to DFU OTA mode */
+			  gecko_cmd_system_reset(2);
+			} else
+			{
 
-        	// Reset tx power to 0dB
-        	gecko_ble_update_tx_power(TXPOWER_0DB);
+				// Reset tx power to 0dB
+				gecko_ble_update_tx_power(TXPOWER_0DB);
 
-          /* Restart advertising after client has disconnected */
-        	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
+			  /* Restart advertising after client has disconnected */
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
 
-        	// Set scheduler to exit polling loop
-        	my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
-        }
-        break;
+				// Set scheduler to exit polling loop
+				my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
+			}
+			break;
 
       /* Events related to OTA upgrading
          ----------------------------------------------------------------------------- */
@@ -162,19 +174,20 @@ bool gecko_update(struct gecko_cmd_packet* evt)
        * If ota_control was written, boot the device into Device Firmware Upgrade (DFU) mode. */
       case gecko_evt_gatt_server_user_write_request_id:
 
-        if (evt->data.evt_gatt_server_user_write_request.characteristic == gattdb_ota_control) {
-          /* Set flag to enter to OTA mode */
-          boot_to_dfu = 1;
-          /* Send response to Write Request */
-          BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_user_write_response(
-            evt->data.evt_gatt_server_user_write_request.connection,
-            gattdb_ota_control,
-            bg_err_success));
+			if (evt->data.evt_gatt_server_user_write_request.characteristic == gattdb_ota_control)
+			{
+			  /* Set flag to enter to OTA mode */
+			  boot_to_dfu = 1;
+			  /* Send response to Write Request */
+			  BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_user_write_response(
+				evt->data.evt_gatt_server_user_write_request.connection,
+				gattdb_ota_control,
+				bg_err_success));
 
-          /* Close connection to enter to DFU OTA mode */
-          BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_close(evt->data.evt_gatt_server_user_write_request.connection));
-        }
-        break;
+			  /* Close connection to enter to DFU OTA mode */
+			  BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_close(evt->data.evt_gatt_server_user_write_request.connection));
+			}
+			break;
 
       default:
 		handled = false;

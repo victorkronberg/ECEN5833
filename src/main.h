@@ -57,6 +57,9 @@
 
 #define EnergyMode3	(1)
 
+#define SCHEDULER_SUPPORTS_DISPLAY_UPDATE_EVENT 	(1)
+#define TIMER_SUPPORTS_1HZ_TIMER_EVENT				(1)
+
 // Event bitmasks
 #define TIMER_EVENT_MASK			(0x0001)
 #define TIMER_EVENT_MASK_POS		(0)
@@ -68,8 +71,8 @@
 #define BLE_EVENT_MASK_POS			(3)
 #define EXIT_EVENT_MASK				(0x0010)
 #define EXIT_EVENT_MASK_POS			(4)
-#define CHECK_RSSI_EVENT_MASK		(0x0020)
-#define CHECK_RSSI_EVENT_MASK_POS	(5)
+#define ONE_HZ_EVENT_MASK			(0x0020)
+#define ONE_HZ_EVENT_MASK_POS		(5)
 
 
 uint32_t event_bitmask;
