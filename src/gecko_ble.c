@@ -199,6 +199,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 void gecko_ble_send_temperature(float tempData)
 {
+	displayPrintf(DISPLAY_ROW_TEMPVALUE,"%f",tempData);
 
 	uint8_t htmTempBuffer[5]; /* Stores the temperature data in the Health Thermometer (HTM) format. */
 	uint8_t flags = 0x00;   /* HTM flags set as 0 for Celsius, no time stamp and no temperature type. */

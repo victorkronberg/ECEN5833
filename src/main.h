@@ -50,6 +50,7 @@
 #include "Si7021.h"
 #include "scheduler.h"
 #include "gecko_ble.h"
+#include "display.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4

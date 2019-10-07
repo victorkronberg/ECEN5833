@@ -9,9 +9,15 @@
 #ifndef SRC_GPIO_H_
 #define SRC_GPIO_H_
 #include <stdbool.h>
+#include "main.h"
 
 #define pin4	(4)
 #define pin5	(5)
+
+#define DISPLAY_ENABLE_PORT		(gpioPortD)
+#define DISPLAY_ENABLE_PIN		(15)
+#define DISPLAY_EXTCOMIN_PORT	(gpioPortD)
+#define DISPLAY_EXTCOMIN_PIN	(13)
 
 // GPIO related LCD display #defines
 #define GPIO_SET_DISPLAY_EXT_COMIN_IMPLEMENTED 	(1)

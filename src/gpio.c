@@ -49,7 +49,7 @@ void gpioLed1SetOff()
 
 void gpioEnableDisplay(void)
 {
-
+	GPIO_PinOutSet(DISPLAY_ENABLE_PORT, DISPLAY_ENABLE_PIN);
 }
 
 void gpioSetDisplayExtcomin(bool high)

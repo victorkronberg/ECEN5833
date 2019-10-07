@@ -144,11 +144,14 @@ void scheduler_power_up_si7021(void)
 
 	scheduler_one_hz_event_handler();
 
+#ifndef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 	// Call I2C power-up
 	enable_si7021_power();
-
+#endif
 	// Set timer for power-up delay
 	delay_ms(POWER_UP_DELAY);
+
+
 }
 
 void scheduler_start_i2c_write(void)
@@ -186,8 +189,10 @@ void scheduler_return_temp_then_wait(void)
 
 	//LOG_INFO("Current temperature in degrees C: %f",temperature);
 
+#ifndef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 	// Power down Si7021
 	disable_si7021_power();
+#endif
 
 	// Send temperature out BLE
 	gecko_ble_send_temperature(temperature);
