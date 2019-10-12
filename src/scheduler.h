@@ -101,4 +101,6 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
  */
 void scheduler_one_hz_event_handler(void);
 
+void client_scheduler(myStateTypeDef *state_struct);
+
 #endif /* SRC_SCHEDULER_H_ */

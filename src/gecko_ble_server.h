@@ -1,14 +1,14 @@
 /*
- * gecko_ble.h
+ * gecko_ble_server.h
  *
- * BLE interface header
+ * BLE interface header for Server
  *
  *  Created on: Oct 1, 2019
  *      Author: vkronber
  */
 
-#ifndef SRC_GECKO_BLE_H_
-#define SRC_GECKO_BLE_H_
+#ifndef SRC_GECKO_BLE_SERVER_H_
+#define SRC_GECKO_BLE_SERVER_H_
 
 #include "main.h"
 #include "gecko_ble_errors.h"
@@ -47,7 +47,7 @@ void gecko_ble_init_LCD_status(void);
  * @return           [True: Triggering event was handled
  *                    False: Triggering event was not handled]
  */
-bool gecko_ble_update(struct gecko_cmd_packet* evt);
+bool gecko_ble_server_update(struct gecko_cmd_packet* evt);
 
 /**
  * [gecko_update]
@@ -95,4 +95,4 @@ void gecko_ble_dynamic_tx_power_update(int8_t rssi);
 void gecko_ble_update_tx_power(int16_t power);
 
 
-#endif /* SRC_GECKO_BLE_H_ */
+#endif /* SRC_GECKO_BLE_SERVER_H_ */

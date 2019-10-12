@@ -1,15 +1,15 @@
 /*
- * gecko_ble.c
+ * gecko_ble_server.c
  *
  * BLE stack interface.  Contains all functions which interact directly with
- * Silicon Labs BLE Stack.  Utilized code from Silicon Labs example code, specifically
- * Health Thermometer example. Also utilized code provided by CU Boulder.
+ * Silicon Labs BLE Stack for Server.  Utilized code from Silicon Labs example code,
+ * specifically Health Thermometer example. Also utilized code provided by CU Boulder.
  *
  *  Created on: Oct 1, 2019
  *      Author: Victor Kronberg
  */
 
-#include "gecko_ble.h"
+#include "gecko_ble_server.h"
 
 uint8_t boot_to_dfu = 0;
 
@@ -30,7 +30,7 @@ void gecko_ble_init_LCD_status(void)
 }
 
 
-bool gecko_ble_update(struct gecko_cmd_packet* evt)
+bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 {
 
 	//LOG_INFO("BLE event %#08x occurred",evt->header);

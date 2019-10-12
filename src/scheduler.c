@@ -24,8 +24,10 @@ void my_scheduler(myStateTypeDef *state_struct)
 	// Check for RSSI check event - does not impact state
 	if( ((state_struct->event_bitmask & ONE_HZ_EVENT_MASK) >> ONE_HZ_EVENT_MASK_POS) == 1 )
 	{
+		__disable_irq();
 		// Clear event bitmask
 		state_struct->event_bitmask &= ~ONE_HZ_EVENT_MASK;
+		__enable_irq();
 
 		scheduler_one_hz_event_handler();
 
@@ -253,4 +255,19 @@ void scheduler_one_hz_event_handler(void)
 
 	// Reset period interrupt
 	reset_periodic_timer();
+}
+
+void client_scheduler(myStateTypeDef *state_struct)
+{
+	// Check for RSSI check event - does not impact state
+	if( ((state_struct->event_bitmask & ONE_HZ_EVENT_MASK) >> ONE_HZ_EVENT_MASK_POS) == 1 )
+	{
+		__disable_irq();
+		// Clear event bitmask
+		state_struct->event_bitmask &= ~ONE_HZ_EVENT_MASK;
+		__enable_irq();
+
+		scheduler_one_hz_event_handler();
+
+	}
 }

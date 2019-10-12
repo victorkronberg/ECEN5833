@@ -182,6 +182,7 @@ uint32_t timerGetRunTimeMilliseconds(void)
 
 void LETIMER0_IRQHandler(void)
 {
+	// Disable interrupt nesting
 	__disable_irq();
 
 	// Acknowledge the interrupt and clear flags
@@ -190,6 +191,7 @@ void LETIMER0_IRQHandler(void)
 
 	LOG_INFO("Timer interrupt thrown with flag %d and state %d",flags,my_state_struct.current_state);
 
+#ifdef BUILD_INCLUDES_BLE_SERVER
 	// Process interrupts
 	// Check for COMP1 flag - periodic interrupt
 	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )
@@ -232,6 +234,17 @@ void LETIMER0_IRQHandler(void)
 			LOG_ERROR("Incorrect interrupt flag set.  COMP0 flagged during %d",my_state_struct.current_state);
 		}
 	}
+#endif
+
+#ifdef BUILD_INCLUDES_BLE_SERVER
+	// Process interrupts
+	// Check for COMP1 flag - periodic interrupt
+	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )
+	{
+		// Set mask for 1 HZ event
+		gecko_external_signal(ONE_HZ_EVENT_MASK);
+	}
+#endif
 
 	// Check for timer roll over
 	if(((flags & LETIMER_IF_UF) >> _LETIMER_IF_UF_SHIFT) == 1 )

@@ -47,9 +47,6 @@ int main(void)
 	/* Event pointer for handling events */
 	struct gecko_cmd_packet* evt;
 
-	// Configure deepest sleep variable
-	SLEEP_EnergyMode_t sleep_mode;
-
   // Initialize device
   initMcu();
   // Initialize board
@@ -75,8 +72,10 @@ int main(void)
 
   displayInit();
 
+#ifdef BUILD_INCLUDES_BLE_SERVER
   my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
   my_state_struct.next_state = STATE0_WAIT_FOR_BLE;
+#endif
 
   // Set deepest sleep mode
   SLEEP_SleepBlockBegin(blocked_sleep_mode);
@@ -93,6 +92,7 @@ int main(void)
   while (1)
   {
 
+#ifdef BUILD_INCLUDES_BLE_SERVER
 		// Check for external event
 		if(my_state_struct.event_bitmask != 0)
 		{
@@ -107,9 +107,29 @@ int main(void)
 			evt = gecko_wait_event();
 
 			//LOG_INFO("Wake event");
-
-			gecko_ble_update(evt);
+			// Server BLE update
+			gecko_ble_server_update(evt);
 		}
+#endif
+
+#ifdef BUILD_INCLUDES_BLE_CLIENT
+
+		if(my_state_struct.event_bitmask != 0)
+		{
+			client_scheduler(&my_state_struct);
+		}
+		else
+		{
+			/* Check for stack event. */
+			// BLE sleep
+			evt = gecko_wait_event();
+
+			//LOG_INFO("Wake event");
+			// Client BLE update
+			gecko_ble_client_update(evt);
+		}
+
+#endif
 
   }
 }

@@ -49,7 +49,9 @@
 #include "i2c.h"
 #include "Si7021.h"
 #include "scheduler.h"
-#include "gecko_ble.h"
+#include "gecko_ble_server.h"
+#include "gecko_ble_client.h"
+#include "ble_device_type.h"
 #include "display.h"
 
 #ifndef MAX_CONNECTIONS
