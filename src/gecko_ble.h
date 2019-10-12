@@ -13,11 +13,12 @@
 #include "main.h"
 #include "gecko_ble_errors.h"
 
-#define ADVERTISE_INTERVAL_250MS	(400)
-#define CONNECTION_INTERVAL_75MS	(50)
-#define LATENCY_300MS				(3)
-#define CONNECTION_TIMEOUT			(350)	// Set to 3.5 second
-#define MAX_CE_LENGTH				(0xffff)
+#define ADVERTISE_INTERVAL_250MS	 (400)
+#define CONNECTION_INTERVAL_75MS	 (50)
+#define LATENCY_300MS				       (3)
+#define CONNECTION_TIMEOUT			   (350)	// Set to 3.5 second
+#define MAX_CE_LENGTH				       (0xffff)
+
 
 // TXPOWER defines
 // Ranges based on UG103.14: Bluetooth LE Fundamentals by Silicon Labs
@@ -32,6 +33,12 @@
 
 // Global variable containing connection handle
 uint8_t conn_handle;
+
+/**
+ * [gecko_ble_init_LCD_status]
+ * @description: Initializes LCD with BT address and server/client status of device
+ */
+void gecko_ble_init_LCD_status(void);
 
 /**
  * [gecko_ble_update]
@@ -56,13 +63,13 @@ bool gecko_update(struct gecko_cmd_packet* evt);
 
 /**
  * [gecko_ble_send_temperature]
- * @description:  Converts floating point temperature to bitstream for BLE
+ * @description:  Converts uint32_t temperature to bitstream for BLE
  *                packet.  Sends temperature "indication" to all listening
  *                clients. Based on Silicon Labs Health Thermometer Blue
  *                Gecko example.
- * @param        temperature [Floating point temperature in degrees C]
+ * @param        temperature [Uint32_t temperature in milli-degrees C]
  */
-void gecko_ble_send_temperature(float temperature);
+void gecko_ble_send_temperature(uint32_t temperature);
 
 /**
  * [gecko_ble_get_rssi]

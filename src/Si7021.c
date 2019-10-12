@@ -41,15 +41,15 @@ void si7021_init_i2c_temp_read(void)
 
 }
 
-float si7021_return_last_temp(void)
+uint32_t si7021_return_last_temp(void)
 {
-	float temperature;
+	uint32_t temperature;
 	uint16_t temp_code;
 
 	temp_code = i2c_return_last_2_bytes();
 
-	// Calculate temperature from raw Si7021 data
-	temperature = ((175.72 * temp_code)/65536)-46.85;
+	// Calculate temperature from raw Si7021 data (milli-degrees C)
+	temperature = ((temp_code * 21965L) >> 13) - 46850;
 
 	return temperature;
 

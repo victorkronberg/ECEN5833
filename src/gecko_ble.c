@@ -15,6 +15,19 @@ uint8_t boot_to_dfu = 0;
 
 struct gecko_msg_le_connection_get_rssi_rsp_t *rssi_rsp;
 
+void gecko_ble_init_LCD_status(void)
+{
+
+	struct gecko_msg_system_get_bt_address_rsp_t *bt_address;
+	bt_address = gecko_cmd_system_get_bt_address();
+
+	displayPrintf(DISPLAY_ROW_NAME,"Server");
+
+	displayPrintf(DISPLAY_ROW_BTADDR,"%02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
+			bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
+			bt_address->address.addr[1],bt_address->address.addr[0]);
+
+}
 
 
 bool gecko_ble_update(struct gecko_cmd_packet* evt)
@@ -37,6 +50,11 @@ bool gecko_ble_update(struct gecko_cmd_packet* evt)
 			case gecko_evt_le_connection_opened_id:
 				// Store the connection handle
 				conn_handle = evt->data.evt_le_connection_opened.connection;
+
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+				// Update the LCD with connection state
+				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
+#endif
 
 				// Set the connection interval for current connection
 				// Set connection parameters
@@ -122,6 +140,10 @@ bool gecko_update(struct gecko_cmd_packet* evt)
        * Here the system is set to start advertising immediately after boot procedure. */
 		case gecko_evt_system_boot_id:
 
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+			gecko_ble_init_LCD_status();
+#endif
+
 			/* Set advertising parameters. 100ms advertisement interval.
 			 * The first parameter is advertising set handle
 			 * The next two parameters are minimum and maximum advertising interval, both in
@@ -134,6 +156,12 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 			/* Start general advertising and enable connections. */
 			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
+
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+			// Update LCD with advertising status
+			displayPrintf(DISPLAY_ROW_CONNECTION,"Advertising");
+#endif
+
 			break;
 
       // Advertising timed out if timeout specified - restart advertising and log it
@@ -161,6 +189,11 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 			  /* Restart advertising after client has disconnected */
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
+
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+				// Update LCD with advertising status
+				displayPrintf(DISPLAY_ROW_CONNECTION,"Advertising");
+#endif
 
 				// Set scheduler to exit polling loop
 				my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
@@ -197,20 +230,19 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 }
 
 
-void gecko_ble_send_temperature(float tempData)
+void gecko_ble_send_temperature(uint32_t tempData)
 {
-	displayPrintf(DISPLAY_ROW_TEMPVALUE,"%f",tempData);
 
 	uint8_t htmTempBuffer[5]; /* Stores the temperature data in the Health Thermometer (HTM) format. */
 	uint8_t flags = 0x00;   /* HTM flags set as 0 for Celsius, no time stamp and no temperature type. */
-	uint32_t temperature;   /* Stores the temperature data read from the sensor in the correct format */
+	int32_t temperature;   /* Stores the temperature data read from the sensor in the correct format */
 	uint8_t *p = htmTempBuffer; /* Pointer to HTM temperature buffer needed for converting values to bitstream. */
 
 	/* Convert flags to bitstream and append them in the HTM temperature data buffer (htmTempBuffer) */
 	UINT8_TO_BITSTREAM(p, flags);
 
 	/* Convert sensor data to correct temperature format */
-	temperature = FLT_TO_UINT32(tempData * 1000, -3);
+	temperature = FLT_TO_UINT32(tempData, -3);
 	/* Convert temperature to bitstream and place it in the HTM temperature data buffer (htmTempBuffer) */
 	UINT32_TO_BITSTREAM(p, temperature);
 

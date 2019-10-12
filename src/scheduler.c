@@ -144,12 +144,15 @@ void scheduler_power_up_si7021(void)
 
 	scheduler_one_hz_event_handler();
 
-#ifndef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+	// If no power load sequencing required, set 0-time delay to trigger next event
+	delay_ms(ZERO_DELAY);
+#else
 	// Call I2C power-up
 	enable_si7021_power();
-#endif
 	// Set timer for power-up delay
 	delay_ms(POWER_UP_DELAY);
+#endif
 
 
 }
@@ -183,9 +186,10 @@ void scheduler_start_i2c_read(void)
 
 void scheduler_return_temp_then_wait(void)
 {
-	float temperature;
-	// Calculate temperature from last measured value
-	temperature = si7021_return_last_temp();
+	uint32_t temp_value;
+	uint32_t tempF_value;
+	// Calculate temperature from last measured value (milli-degrees C)
+	temp_value = si7021_return_last_temp();
 
 	//LOG_INFO("Current temperature in degrees C: %f",temperature);
 
@@ -194,8 +198,16 @@ void scheduler_return_temp_then_wait(void)
 	disable_si7021_power();
 #endif
 
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+	// Convert milli-degrees C to degrees F
+	// Scale by 10 to avoid float
+	tempF_value = ((temp_value * 18) + 320000)/10;
+
+	displayPrintf(DISPLAY_ROW_TEMPVALUE,"%d.%d C / %d.%d F",temp_value/1000,(temp_value/100)%10,tempF_value/1000,(tempF_value/100)%10);
+#endif
+
 	// Send temperature out BLE
-	gecko_ble_send_temperature(temperature);
+	gecko_ble_send_temperature(temp_value);
 
 	// Go back to deepest sleep to wait for next temperature reading
 	SLEEP_SleepBlockEnd(sleepEM2);

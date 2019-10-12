@@ -12,6 +12,8 @@
 
 #include "main.h"
 
+#define ZERO_DELAY	(0)
+
 typedef enum states  {
 	STATE0_WAIT_FOR_BLE,
 	STATE1_WAIT_FOR_TIMER,
@@ -92,6 +94,11 @@ void scheduler_enter_temperature_polling_loop(void);
  */
 void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
 
+/**
+ * [scheduler_one_hz_event_handler]
+ * @description: Event handler for 1Hz events. Updates TX power based on current
+ * 							RSSI value and toggles EXTCOMIN on LCD to prevent charge buildup
+ */
 void scheduler_one_hz_event_handler(void);
 
 #endif /* SRC_SCHEDULER_H_ */

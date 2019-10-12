@@ -48,8 +48,18 @@ void gpioLed1SetOn();
  */
 void gpioLed1SetOff();
 
+/**
+ * [gpioEnableDisplay]
+ * @description: Enables power to the LCD display.  Disables power load management
+ *               for Si7021 as they share the same enable pin
+ */
 void gpioEnableDisplay(void);
 
+/**
+ * [gpioSetDisplayExtcomin]
+ * @description: Toggles Extcomin pin on LCD to prevent charge buildup in cell
+ * @param        high [description]
+ */
 void gpioSetDisplayExtcomin(bool high);
 
 #endif /* SRC_GPIO_H_ */

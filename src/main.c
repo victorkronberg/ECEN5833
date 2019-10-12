@@ -10,12 +10,7 @@
 
 #include "main.h"
 
-
-
-
 uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
-
-
 
 #ifdef	EnergyMode3
 const SLEEP_EnergyMode_t blocked_sleep_mode = sleepEM4;
@@ -43,22 +38,11 @@ static const gecko_configuration_t config = {
 #endif // (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
 };
 
-static void delayApproxOneSecond(void)
-{
-	/**
-	 * Wait loops are a bad idea in general!  Don't copy this code in future assignments!
-	 * We'll discuss how to do this a better way in the next assignment.
-	 */
-	volatile int i;
-	i=0;
-	for (i = 0; i < 350000; ) {
-		  i=i+1;
-	}
-}
-
 
 int main(void)
 {
+
+	__disable_irq();
 
 	/* Event pointer for handling events */
 	struct gecko_cmd_packet* evt;
@@ -91,7 +75,6 @@ int main(void)
 
   displayInit();
 
-
   my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
   my_state_struct.next_state = STATE0_WAIT_FOR_BLE;
 
@@ -103,6 +86,8 @@ int main(void)
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
   gecko_init(&config);
+
+  __enable_irq();
 
   /* Infinite loop */
   while (1)
