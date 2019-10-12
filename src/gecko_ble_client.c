@@ -14,6 +14,11 @@
 uint8_t boot_to_dfu = 0;
 // Health Thermometer service UUID defined by Bluetooth SIG
 const uint8_t thermoService[2] = { 0x09, 0x18 };
+// Temperature Measurement characteristic UUID defined by Bluetooth SIG
+const uint8_t thermoChar[2] = { 0x1c, 0x2a };
+
+ConnProperties conn_properties;
+ConnState conn_state;
 
 struct gecko_msg_le_connection_get_rssi_rsp_t *rssi_rsp;
 
@@ -61,17 +66,9 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
 #endif
 
-				// Set the connection interval for current connection
-				// Set connection parameters
-				// First parameter is connection handle
-				// Min and Max interval = value * 1.5ms
-				// Latency = number of intervals slave can skip
-				// Timeout = value * 10ms
-				// MIN/MAX conection length = value * 0.625ms
-				gecko_cmd_le_connection_set_timing_parameters(conn_handle,CONNECTION_INTERVAL_75MS,CONNECTION_INTERVAL_75MS,
-						LATENCY_300MS,CONNECTION_TIMEOUT,0,MAX_CE_LENGTH);
-
 				gecko_cmd_gatt_discover_primary_services_by_uuid(conn_handle,2,(const uint8*)thermoService);
+
+				conn_state = discoverServices;
 
 				break;
 
@@ -81,6 +78,38 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				// Set external events for processing
 				my_state_struct.event_bitmask |= evt->data.evt_system_external_signal.extsignals;
 				__enable_irq();
+
+				break;
+
+
+			case gecko_evt_gatt_service_id:
+
+				conn_properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;
+
+				break;
+
+			case gecko_evt_gatt_characteristic_id:
+
+				conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic;
+
+				break;
+
+			case gecko_evt_gatt_procedure_completed_id:
+
+				if(conn_state == discoverServices)
+				{
+					gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
+							conn_properties.thermometerServiceHandle,2,(const uint8_t*)thermoChar);
+					conn_state = discoverCharacteristics;
+					break;
+				}
+				if(conn_state == discoverCharacteristics)
+				{
+					gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
+							conn_properties.thermometerCharacteristicHandle,gatt_indication);
+					conn_state = enableIndication;
+					break;
+				}
 
 				break;
 
