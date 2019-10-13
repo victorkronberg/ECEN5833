@@ -11,11 +11,12 @@
 
 #include "gecko_ble_client.h"
 
-uint8_t boot_to_dfu = 0;
 // Health Thermometer service UUID defined by Bluetooth SIG
 const uint8_t thermoService[2] = { 0x09, 0x18 };
 // Temperature Measurement characteristic UUID defined by Bluetooth SIG
 const uint8_t thermoChar[2] = { 0x1c, 0x2a };
+
+struct gecko_msg_system_get_bt_address_rsp_t *bt_address;;
 
 ConnProperties conn_properties;
 ConnState conn_state;
@@ -24,9 +25,7 @@ struct gecko_msg_le_connection_get_rssi_rsp_t *rssi_rsp;
 
 void gecko_ble_init_LCD_status_client(void)
 {
-	struct gecko_msg_system_get_bt_address_rsp_t *bt_address;
 	bt_address = gecko_cmd_system_get_bt_address();
-	uint32_t addr[] = SERVER_BT_ADDRESS;
 
 	displayPrintf(DISPLAY_ROW_NAME,"Client");
 
@@ -34,8 +33,11 @@ void gecko_ble_init_LCD_status_client(void)
 			bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
 			bt_address->address.addr[1],bt_address->address.addr[0]);
 
-	displayPrintf(DISPLAY_ROW_BTADDR2,"%02x:%02x:%02x:%02x:%02x:%02x",addr[5],
-			addr[4],addr[3],addr[2],addr[1],addr[0]);
+	bt_address->address = (bd_addr)SERVER_BT_ADDRESS;
+
+	displayPrintf(DISPLAY_ROW_BTADDR2,"%02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
+			bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
+			bt_address->address.addr[1],bt_address->address.addr[0]);
 
 }
 
@@ -44,18 +46,68 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 {
 
 	//LOG_INFO("BLE event %#08x occurred",evt->header);
-
+	uint8_t* charValue;
 	bool handled;
 
-	// Initially handle events related to advertising and resetting
-	handled = gecko_update(evt);
-
 	// If not already handled, there is an open connection
-	if(!handled)
-	{
 		handled = 1;
 		switch BGLIB_MSG_ID(evt->header)
 		{
+	      /* This boot event is generated when the system boots up after reset.
+	       * Do not call any stack commands before receiving the boot event.
+	       * Here the system is set to start discovery immediately after boot procedure. */
+			case gecko_evt_system_boot_id:
+
+	#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+				gecko_ble_init_LCD_status_client();
+	#endif
+
+				// Set passive scanning on 1Mb PHY
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_type(le_gap_phy_1m, 0));
+				// Set scan interval and scan window
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_timing(le_gap_phy_1m, 16, 16));
+				// Start discover using 1M PHY and generic discovery mode
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m,le_gap_discover_generic));
+
+				conn_state = scanning;
+
+	#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+				// Update LCD with advertising status
+				displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
+	#endif
+
+				break;
+
+	      case gecko_evt_le_gap_scan_response_id:
+
+	    	  	//LOG_INFO("Scan response received");
+	    	  	// Check for a connectable packet
+	    	  	if (evt->data.evt_le_gap_scan_response.packet_type == 0) {
+
+	    	  		bt_address->address = (bd_addr)SERVER_BT_ADDRESS;
+	    	  		bool i = findStaticBluetoothAddress(evt->data.evt_le_gap_scan_response.address, bt_address->address);
+	    	  		if(i)
+	    	  		{
+	    	  			// Stop scanning while connected
+	    	  			//gecko_cmd_le_gap_end_procedure();
+
+						LOG_INFO("Connectable device found at %02x:%02x:%02x:%02x:%02x:%02x",evt->data.evt_le_gap_scan_response.address.addr[5],
+								evt->data.evt_le_gap_scan_response.address.addr[4],evt->data.evt_le_gap_scan_response.address.addr[3],evt->data.evt_le_gap_scan_response.address.addr[2],
+								evt->data.evt_le_gap_scan_response.address.addr[1],evt->data.evt_le_gap_scan_response.address.addr[0]);
+
+						LOG_INFO("Attempting to connect at %02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
+								bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
+								bt_address->address.addr[1],bt_address->address.addr[0]);
+
+						// Scan response received, attempt to connect to static address
+						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(bt_address->address,
+								evt->data.evt_le_gap_scan_response.address_type,le_gap_phy_1m));
+	    	  		}
+	    	  	}
+
+
+	    	  	break;
+
 			// New connection has been opened
 			case gecko_evt_le_connection_opened_id:
 				// Store the connection handle
@@ -66,7 +118,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
 #endif
 
-				gecko_cmd_gatt_discover_primary_services_by_uuid(conn_handle,2,(const uint8*)thermoService);
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(conn_handle,2,(const uint8*)thermoService));
 
 				conn_state = discoverServices;
 
@@ -90,7 +142,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 			case gecko_evt_gatt_characteristic_id:
 
-				conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic;
+				conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
 
 				break;
 
@@ -98,50 +150,39 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 				if(conn_state == discoverServices)
 				{
-					gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
-							conn_properties.thermometerServiceHandle,2,(const uint8_t*)thermoChar);
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
+							conn_properties.thermometerServiceHandle,2,(const uint8_t*)thermoChar));
 					conn_state = discoverCharacteristics;
 					break;
 				}
 				if(conn_state == discoverCharacteristics)
 				{
-					gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
-							conn_properties.thermometerCharacteristicHandle,gatt_indication);
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
+							conn_properties.thermometerCharacteristicHandle,gatt_indication));
 					conn_state = enableIndication;
+
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+					// Update the LCD with connection state
+					displayPrintf(DISPLAY_ROW_CONNECTION,"Handling Indications");
+#endif
+
 					break;
 				}
 
 				break;
 
-			/* This event is generated when a connected client has either
-			* 1) changed a Characteristic Client Configuration, meaning that they have enabled
-			* or disabled Notifications or Indications, or
-			* 2) sent a confirmation upon a successful reception of the indication. */
-			case gecko_evt_gatt_server_characteristic_status_id:
-			/* Check that the characteristic in question is temperature - its ID is defined
-			* in gatt.xml as "temperature_measurement". Also check that status_flags = 1, meaning that
-			* the characteristic client configuration was changed (notifications or indications
-			* enabled or disabled). */
-				if ((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
-					&& (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x01))
-				{
-				  if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x02)
-				  {
-					  __disable_irq();
-					  // Enable temperature polling
-					  my_state_struct.event_bitmask |= BLE_EVENT_MASK;
-					  __enable_irq();
-					  //LOG_INFO("BLE Mask has been set");
+			case gecko_evt_gatt_characteristic_value_id:
 
-				  } else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x00)
-				  {
+				charValue = &(evt->data.evt_gatt_characteristic_value.value.data[0]); /* Stores the temperature data in the Health Thermometer (HTM) format. */
 
-					  __disable_irq();
-					// Disable temperature polling
-					  my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
-					  __enable_irq();
-				  }
-				}
+				conn_properties.temperature = (charValue[1] << 0) + (charValue[2] << 8) + (charValue[3] << 16);
+
+				// Retrieve temperature and print to LCD if display is enabled
+				gecko_ble_receive_temperature(conn_properties.temperature);
+
+				// Send confirmation for the indication
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));
+
 				break;
 
 			// RSSI ready to be read
@@ -149,9 +190,22 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				// Ensure results are valid
 				if(evt->data.evt_le_connection_rssi.status == 0)
 				{
-					// Retrieve RSSI an set TX Power based on RSSI
-					gecko_ble_dynamic_tx_power_update(evt->data.evt_le_connection_rssi.rssi);
+					// Retrieve RSSI
+					conn_properties.rssi = evt->data.evt_le_connection_rssi.rssi;
 				}
+				break;
+
+			// Connection closed event - restart discovery
+			case gecko_evt_le_connection_closed_id:
+		    	 // Start discover using 1M PHY and generic discovery mode
+		    	 BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m,	le_gap_discover_generic));
+
+		    	 conn_state = scanning;
+
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+		    	 // Update LCD with advertising status
+		    	 displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
+#endif
 				break;
 
 			default:
@@ -159,184 +213,54 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				handled = 0;
 				break;
 		}
-	}
+
 
 	return handled;
 }
 
-bool gecko_update(struct gecko_cmd_packet* evt)
-{
-	bool handled = true;
 
-    /* Handle events */
-	switch (BGLIB_MSG_ID(evt->header)) {
-
-      /* This boot event is generated when the system boots up after reset.
-       * Do not call any stack commands before receiving the boot event.
-       * Here the system is set to start discovery immediately after boot procedure. */
-		case gecko_evt_system_boot_id:
-
-#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
-			gecko_ble_init_LCD_status_client();
-#endif
-			// Start discover using 1M PHY and generic discovery mode
-			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m,	le_gap_discover_generic));
-
-#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
-			// Update LCD with advertising status
-			displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
-#endif
-
-			break;
-
-      case gecko_evt_le_gap_scan_response_id:
-
-    	  	LOG_INFO("Scan response received");
-
-    	  	/* Start general advertising and enable connections. */
-    	  	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect((bd_addr)SERVER_BT_ADDRESS,le_gap_address_type_public_identity,le_gap_phy_1m));
-
-    	  	break;
-
-      case gecko_evt_le_connection_closed_id:
-
-			/* Check if need to boot to dfu mode */
-			if (boot_to_dfu)
-			{
-			  /* Enter to DFU OTA mode */
-			  gecko_cmd_system_reset(2);
-			} else
-			{
-
-				// Reset tx power to 0dB
-				gecko_ble_update_tx_power(TXPOWER_0DB);
-
-			  /* Restart advertising after client has disconnected */
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
-
-#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
-				// Update LCD with advertising status
-				displayPrintf(DISPLAY_ROW_CONNECTION,"Advertising");
-#endif
-
-				// Set scheduler to exit polling loop
-				my_state_struct.event_bitmask |= EXIT_EVENT_MASK;
-			}
-			break;
-
-      /* Events related to OTA upgrading
-         ----------------------------------------------------------------------------- */
-
-      /* Check if the user-type OTA Control Characteristic was written.
-       * If ota_control was written, boot the device into Device Firmware Upgrade (DFU) mode. */
-      case gecko_evt_gatt_server_user_write_request_id:
-
-			if (evt->data.evt_gatt_server_user_write_request.characteristic == gattdb_ota_control)
-			{
-			  /* Set flag to enter to OTA mode */
-			  boot_to_dfu = 1;
-			  /* Send response to Write Request */
-			  BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_user_write_response(
-				evt->data.evt_gatt_server_user_write_request.connection,
-				gattdb_ota_control,
-				bg_err_success));
-
-			  /* Close connection to enter to DFU OTA mode */
-			  BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_close(evt->data.evt_gatt_server_user_write_request.connection));
-			}
-			break;
-
-      default:
-		handled = false;
-		break;
-    }
-    return handled;
-}
-
-
-void gecko_ble_send_temperature(uint32_t tempData)
+void gecko_ble_receive_temperature(uint32_t temp_value)
 {
 
-	uint8_t htmTempBuffer[5]; /* Stores the temperature data in the Health Thermometer (HTM) format. */
-	uint8_t flags = 0x00;   /* HTM flags set as 0 for Celsius, no time stamp and no temperature type. */
-	int32_t temperature;   /* Stores the temperature data read from the sensor in the correct format */
-	uint8_t *p = htmTempBuffer; /* Pointer to HTM temperature buffer needed for converting values to bitstream. */
+	uint32_t tempF_value;
 
-	/* Convert flags to bitstream and append them in the HTM temperature data buffer (htmTempBuffer) */
-	UINT8_TO_BITSTREAM(p, flags);
 
-	/* Convert sensor data to correct temperature format */
-	temperature = FLT_TO_UINT32(tempData, -3);
-	/* Convert temperature to bitstream and place it in the HTM temperature data buffer (htmTempBuffer) */
-	UINT32_TO_BITSTREAM(p, temperature);
+#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
+	// Convert milli-degrees C to degrees F (scaled by 10 to avoid float)
+	tempF_value = ((temp_value * 18) + 320000)/10;
 
-	/* Send indication of the temperature in htmTempBuffer to all "listening" clients.
-	* This enables the Health Thermometer in the Blue Gecko app to display the temperature.
-	*  0xFF as connection ID will send indications to all connections. */
-	gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, htmTempBuffer);
+	displayPrintf(DISPLAY_ROW_TEMPVALUE,"%d.%d C / %d.%d F",temp_value/1000,(temp_value/100)%10,tempF_value/1000,(tempF_value/100)%10);
+#endif
 
 }
 
-
-void gecko_ble_get_rssi(void)
+/**
+ * @return a float value based on a UINT32 value written by FLT_TO_UINT32 and
+ * UINT32_TO_BITSTREAM
+ * @param value_start_little_endian is a pointer to the first byte of the float
+ * which is represented in UINT32 format from FLT_TO_UINT32/UINT32_TO_BITSTREAM
+ */
+float gattUint32ToFloat(const uint8_t *value_start_little_endian)
 {
-	// Initiate RSSI retrieval before returning in order to tune TX Power
-	gecko_cmd_le_connection_get_rssi(conn_handle);
+	int8_t exponent = (int8_t)value_start_little_endian[3];
+	uint32_t mantissa = value_start_little_endian[0] +
+						(((uint32_t)value_start_little_endian[1]) << 8) +
+						(((uint32_t)value_start_little_endian[2]) << 16);
+	return (float)mantissa*pow(10,exponent);
 }
 
-void gecko_ble_dynamic_tx_power_update(int8_t rssi)
+// Parse advertisements looking for advertised Health Thermometer service
+bool findStaticBluetoothAddress(bd_addr server_address,bd_addr target_address)
 {
-	int16_t tx_power;
-	// Check range of RSSI and assign appropriate TX power
-	if(rssi > -35)
+	if(memcmp(server_address.addr,target_address.addr,sizeof(bd_addr)))
 	{
-		tx_power = TXPOWER_MIN;
-	}
-	else if(rssi > -45)
-	{
-		tx_power = TXPOWER_NEG_20DB;
-	}
-	else if(rssi > -55)
-	{
-		tx_power = TXPOWER_NEG_15DB;
-	}
-	else if(rssi > -65)
-	{
-		tx_power = TXPOWER_NEG_5DB;
-	}
-	else if(rssi > -75)
-	{
-		tx_power = TXPOWER_0DB;
-	}
-	else if(rssi > -85)
-	{
-		tx_power = TXPOWER_POS_5DB;
+		return 0;
 	}
 	else
 	{
-		tx_power = TXPOWER_MAX;
+		return 1;
 	}
 
-	//LOG_INFO("TX power updated with a RSSI of %d",rssi);
-
-	// Update TX power based on calculated TX power value
-	gecko_ble_update_tx_power(tx_power);
-
-
 }
 
-void gecko_ble_update_tx_power(int16_t power)
-{
-	struct gecko_msg_system_set_tx_power_rsp_t* rsp;
 
-	// Halt the system in order to change TX power
-	gecko_cmd_system_halt(1);
-
-	// Update power
-	rsp = gecko_cmd_system_set_tx_power(power);
-
-	//LOG_INFO("TX power updated with a Power setting of %d",rsp->set_power);
-
-	// Resume system
-	gecko_cmd_system_halt(0);
-}

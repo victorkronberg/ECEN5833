@@ -92,7 +92,7 @@ int main(void)
   while (1)
   {
 
-#ifdef BUILD_INCLUDES_BLE_SERVER
+#if BUILD_INCLUDES_BLE_SERVER
 		// Check for external event
 		if(my_state_struct.event_bitmask != 0)
 		{
@@ -112,7 +112,7 @@ int main(void)
 		}
 #endif
 
-#ifdef BUILD_INCLUDES_BLE_CLIENT
+#if BUILD_INCLUDES_BLE_CLIENT
 
 		if(my_state_struct.event_bitmask != 0)
 		{
