@@ -22,6 +22,7 @@ ConnProperties conn_properties;
 ConnState conn_state;
 
 struct gecko_msg_le_connection_get_rssi_rsp_t *rssi_rsp;
+struct gecko_msg_le_gap_connect_rsp_t *connect_response;
 
 void gecko_ble_init_LCD_status_client(void)
 {
@@ -93,22 +94,17 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	    	  		if(i)
 	    	  		{
 
-								/*
-								LOG_INFO("Connectable device found at %02x:%02x:%02x:%02x:%02x:%02x",evt->data.evt_le_gap_scan_response.address.addr[5],
-									evt->data.evt_le_gap_scan_response.address.addr[4],evt->data.evt_le_gap_scan_response.address.addr[3],evt->data.evt_le_gap_scan_response.address.addr[2],
-									evt->data.evt_le_gap_scan_response.address.addr[1],evt->data.evt_le_gap_scan_response.address.addr[0]);
+						// Scan response received, attempt to connect to static address
+	    	  			connect_response = gecko_cmd_le_gap_connect(bt_address->address,
+							evt->data.evt_le_gap_scan_response.address_type,le_gap_phy_1m);
 
-								LOG_INFO("Attempting to connect at %02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
-									bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
-									bt_address->address.addr[1],bt_address->address.addr[0]);
-									*/
+	    	  			if(connect_response->result == 0)
+	    	  			{
+	    	  				// If connection request was successful, update state and stop scanning
+	    	  				conn_state = opening;
+	    	  				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());
 
-								// Scan response received, attempt to connect to static address
-								BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(bt_address->address,
-									evt->data.evt_le_gap_scan_response.address_type,le_gap_phy_1m));
-
-								conn_state = opening;
-
+	    	  			}
 	    	  		}
 	    	  	}
 
@@ -125,6 +121,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
 #endif
 
+				// Start discovery of primary services
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(conn_handle,2,(const uint8*)thermoService));
 
 				conn_state = discoverServices;
@@ -143,12 +140,14 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 			case gecko_evt_gatt_service_id:
 
+				// Grab Service handle for HTM
 				conn_properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;
 
 				break;
 
 			case gecko_evt_gatt_characteristic_id:
 
+				// Grab Characteristic handle for temperature measurement
 				conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
 
 				break;
@@ -157,6 +156,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 				if(conn_state == discoverServices)
 				{
+					// Discover services completed, start discovery of characteristics
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
 							conn_properties.thermometerServiceHandle,2,(const uint8_t*)thermoChar));
 					conn_state = discoverCharacteristics;
@@ -164,6 +164,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				}
 				if(conn_state == discoverCharacteristics)
 				{
+					// Characteristic discovery complete, enable indications
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
 							conn_properties.thermometerCharacteristicHandle,gatt_indication));
 					conn_state = enableIndication;
@@ -200,6 +201,8 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				{
 					// Retrieve RSSI
 					conn_properties.rssi = evt->data.evt_le_connection_rssi.rssi;
+					// Retrieve RSSI an set TX Power based on RSSI
+					gecko_ble_dynamic_tx_power_update(conn_properties.rssi);
 				}
 				break;
 
