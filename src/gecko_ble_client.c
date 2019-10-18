@@ -56,27 +56,27 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	      /* This boot event is generated when the system boots up after reset.
 	       * Do not call any stack commands before receiving the boot event.
 	       * Here the system is set to start discovery immediately after boot procedure. */
-			case gecko_evt_system_boot_id:
+				 case gecko_evt_system_boot_id:
 
 	#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
-				gecko_ble_init_LCD_status_client();
+					gecko_ble_init_LCD_status_client();
 	#endif
 
-				// Set passive scanning on 1Mb PHY
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_type(le_gap_phy_1m, 0));
-				// Set scan interval and scan window
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_timing(le_gap_phy_1m, 16, 16));
-				// Start discover using 1M PHY and generic discovery mode
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m,le_gap_discover_generic));
+					// Set passive scanning on 1Mb PHY
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_type(le_gap_phy_1m, 0));
+					// Set scan interval and scan window
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_timing(le_gap_phy_1m, 16, 16));
+					// Start discover using 1M PHY and generic discovery mode
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m,le_gap_discover_generic));
 
-				conn_state = scanning;
+					conn_state = scanning;
 
 	#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
-				// Update LCD with advertising status
-				displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
+					// Update LCD with advertising status
+					displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
 	#endif
 
-				break;
+					break;
 
 	      case gecko_evt_le_gap_scan_response_id:
 
@@ -84,13 +84,16 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	    	  	// Check for a connectable packet
 	    	  	if (evt->data.evt_le_gap_scan_response.packet_type == 0) {
 
+							// Load target BT address
 	    	  		bt_address->address = (bd_addr)SERVER_BT_ADDRESS;
+
+							// Check for matching address in the advertising packet
 	    	  		bool i = findStaticBluetoothAddress(evt->data.evt_le_gap_scan_response.address, bt_address->address);
+
 	    	  		if(i)
 	    	  		{
-	    	  			// Stop scanning while connected
-	    	  			//gecko_cmd_le_gap_end_procedure();
 
+								/*
 								LOG_INFO("Connectable device found at %02x:%02x:%02x:%02x:%02x:%02x",evt->data.evt_le_gap_scan_response.address.addr[5],
 									evt->data.evt_le_gap_scan_response.address.addr[4],evt->data.evt_le_gap_scan_response.address.addr[3],evt->data.evt_le_gap_scan_response.address.addr[2],
 									evt->data.evt_le_gap_scan_response.address.addr[1],evt->data.evt_le_gap_scan_response.address.addr[0]);
@@ -98,6 +101,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 								LOG_INFO("Attempting to connect at %02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
 									bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
 									bt_address->address.addr[1],bt_address->address.addr[0]);
+									*/
 
 								// Scan response received, attempt to connect to static address
 								BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(bt_address->address,
@@ -178,6 +182,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 				charValue = &(evt->data.evt_gatt_characteristic_value.value.data[0]); /* Stores the temperature data in the Health Thermometer (HTM) format. */
 
+				// Shift HTM bitstream into readable format
 				conn_properties.temperature = (charValue[1] << 0) + (charValue[2] << 8) + (charValue[3] << 16);
 
 				// Retrieve temperature and print to LCD if display is enabled
@@ -237,12 +242,7 @@ void gecko_ble_receive_temperature(uint32_t temp_value)
 
 }
 
-/**
- * @return a float value based on a UINT32 value written by FLT_TO_UINT32 and
- * UINT32_TO_BITSTREAM
- * @param value_start_little_endian is a pointer to the first byte of the float
- * which is represented in UINT32 format from FLT_TO_UINT32/UINT32_TO_BITSTREAM
- */
+
 float gattUint32ToFloat(const uint8_t *value_start_little_endian)
 {
 	int8_t exponent = (int8_t)value_start_little_endian[3];

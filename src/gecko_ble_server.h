@@ -14,7 +14,7 @@
 #include "gecko_ble_errors.h"
 
 #define ADVERTISE_INTERVAL_250MS	 (400)
-#define CONNECTION_INTERVAL_75MS	 (50)
+#define CONNECTION_INTERVAL_75MS	 (60)
 #define LATENCY_300MS				       (3)
 #define CONNECTION_TIMEOUT			   (350)	// Set to 3.5 second
 #define MAX_CE_LENGTH				       (0xffff)
