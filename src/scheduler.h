@@ -37,7 +37,7 @@ myStateTypeDef my_state_struct;
 
 /**
  * [my_scheduler]
- * @description: Interrupt driven scheduler which controls state machine. Handles
+ * @description: Interrupt driven scheduler which controls server state machine. Handles
  * 							changes between states and calling functions relevant to state
  * 							operations.
  * @param        state_struct [Struct containing context for the state machine]
@@ -101,6 +101,13 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
  */
 void scheduler_one_hz_event_handler(void);
 
+/**
+ * [client_scheduler description]
+ * @description: Interrupt driven scheduler which controls client state machine. Handles
+ * 							changes between states and calling functions relevant to state
+ * 							operations.
+ * @param        state_struct [Struct containing context for the state machine]
+ */
 void client_scheduler(myStateTypeDef *state_struct);
 
 #endif /* SRC_SCHEDULER_H_ */
