@@ -91,17 +91,20 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	    	  			// Stop scanning while connected
 	    	  			//gecko_cmd_le_gap_end_procedure();
 
-						LOG_INFO("Connectable device found at %02x:%02x:%02x:%02x:%02x:%02x",evt->data.evt_le_gap_scan_response.address.addr[5],
-								evt->data.evt_le_gap_scan_response.address.addr[4],evt->data.evt_le_gap_scan_response.address.addr[3],evt->data.evt_le_gap_scan_response.address.addr[2],
-								evt->data.evt_le_gap_scan_response.address.addr[1],evt->data.evt_le_gap_scan_response.address.addr[0]);
+								LOG_INFO("Connectable device found at %02x:%02x:%02x:%02x:%02x:%02x",evt->data.evt_le_gap_scan_response.address.addr[5],
+									evt->data.evt_le_gap_scan_response.address.addr[4],evt->data.evt_le_gap_scan_response.address.addr[3],evt->data.evt_le_gap_scan_response.address.addr[2],
+									evt->data.evt_le_gap_scan_response.address.addr[1],evt->data.evt_le_gap_scan_response.address.addr[0]);
 
-						LOG_INFO("Attempting to connect at %02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
-								bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
-								bt_address->address.addr[1],bt_address->address.addr[0]);
+								LOG_INFO("Attempting to connect at %02x:%02x:%02x:%02x:%02x:%02x",bt_address->address.addr[5],
+									bt_address->address.addr[4],bt_address->address.addr[3],bt_address->address.addr[2],
+									bt_address->address.addr[1],bt_address->address.addr[0]);
 
-						// Scan response received, attempt to connect to static address
-						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(bt_address->address,
-								evt->data.evt_le_gap_scan_response.address_type,le_gap_phy_1m));
+								// Scan response received, attempt to connect to static address
+								BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(bt_address->address,
+									evt->data.evt_le_gap_scan_response.address_type,le_gap_phy_1m));
+
+								conn_state = opening;
+
 	    	  		}
 	    	  	}
 
@@ -262,5 +265,3 @@ bool findStaticBluetoothAddress(bd_addr server_address,bd_addr target_address)
 	}
 
 }
-
-
