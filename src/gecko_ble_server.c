@@ -40,6 +40,11 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 	// Initially handle events related to advertising and resetting
 	handled = gecko_update(evt);
 
+	if(!handled)
+	{
+		handled = gecko_security_update(evt);
+	}
+
 	// If not already handled, there is an open connection
 	if(!handled)
 	{
@@ -151,6 +156,8 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 			 * The last two parameters are duration and maxevents left as default. */
 			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, ADVERTISE_INTERVAL_250MS, ADVERTISE_INTERVAL_250MS, 0, 0));
 
+			gecko_ble_security_init();
+
 			// Set tx power to 0dB
 			gecko_ble_update_tx_power(TXPOWER_0DB);
 
@@ -186,6 +193,9 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 				// Reset tx power to 0dB
 				gecko_ble_update_tx_power(TXPOWER_0DB);
+
+				// Delete any prior bonding information
+				gecko_cmd_sm_delete_bondings();
 
 			  /* Restart advertising after client has disconnected */
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));

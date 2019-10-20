@@ -236,7 +236,7 @@ void LETIMER0_IRQHandler(void)
 	}
 #endif
 
-#ifdef BUILD_INCLUDES_BLE_SERVER
+#ifdef BUILD_INCLUDES_BLE_CLIENT
 	// Process interrupts
 	// Check for COMP1 flag - periodic interrupt
 	if(((flags & LETIMER_IF_COMP1) >> _LETIMER_IF_COMP1_SHIFT) == 1 )

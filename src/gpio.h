@@ -19,6 +19,9 @@
 #define DISPLAY_EXTCOMIN_PORT	(gpioPortD)
 #define DISPLAY_EXTCOMIN_PIN	(13)
 
+#define PD0_BUTTON_PORT			(gpioPortF)
+#define PD0_BUTTON_PIN			(6)
+
 // GPIO related LCD display #defines
 #define GPIO_SET_DISPLAY_EXT_COMIN_IMPLEMENTED 	(1)
 #define GPIO_DISPLAY_SUPPORT_IMPLEMENTED		(1)

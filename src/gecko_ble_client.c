@@ -225,7 +225,6 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				break;
 		}
 
-
 	return handled;
 }
 

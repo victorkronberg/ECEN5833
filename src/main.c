@@ -72,6 +72,9 @@ int main(void)
 
   displayInit();
 
+  // Seed pseudo random number generator for passkey number generation
+  srand(time(0));
+
 #ifdef BUILD_INCLUDES_BLE_SERVER
   my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
   my_state_struct.next_state = STATE0_WAIT_FOR_BLE;

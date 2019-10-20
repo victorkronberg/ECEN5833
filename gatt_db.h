@@ -25,5 +25,6 @@ extern const struct bg_gattdb_def bg_gattdb_data;
 #define gattdb_tx_power_level                  36
 #define gattdb_ota_control                     39
 #define gattdb_ota_data                        41
+#define gattdb_button_state                    44
 
 #endif

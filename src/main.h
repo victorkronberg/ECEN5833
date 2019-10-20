@@ -10,6 +10,9 @@
 #ifndef SRC_MAIN_H_
 #define SRC_MAIN_H_
 
+/* Standard C Headers */
+#include <time.h>
+
 /* Board headers */
 #include "init_mcu.h"
 #include "init_board.h"
@@ -53,6 +56,7 @@
 #include "gecko_ble_client.h"
 #include "ble_device_type.h"
 #include "display.h"
+#include "gecko_ble_security.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4
@@ -77,6 +81,7 @@
 #define ONE_HZ_EVENT_MASK			(0x0020)
 #define ONE_HZ_EVENT_MASK_POS		(5)
 
+#define RAND_MAX					(999999)
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;
