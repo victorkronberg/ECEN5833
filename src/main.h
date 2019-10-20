@@ -82,6 +82,8 @@
 #define ONE_HZ_EVENT_MASK_POS		(5)
 #define PASSKEY_CONFIRM_MASK		(0x0040)
 #define PASSKEY_CONFIRM_POS			(6)
+#define BUTTON_EVENT_MASK			(0x0080)
+#define BUTTON_EVENT_POS			(7)
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;

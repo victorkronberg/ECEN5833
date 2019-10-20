@@ -1,6 +1,6 @@
 /*
  * gpio.c
- * GPIO control for LED0 and LED1
+ * GPIO control for LED0 and LED1 as well as input from PB0
  *
  *  Created on: Dec 12, 2018
  *      Author: Dan Walkes
@@ -19,7 +19,7 @@
 #define LED1_port	gpioPortF
 #define LED1_pin	pin5
 
-uint32_t ledstatus;
+uint8_t button_state;
 
 void gpioInit()
 {
@@ -35,12 +35,11 @@ void gpioInit()
 
 	// Disable GPIO interrupts prior to configuring pin interrupts
 	//GPIO_IntDisable(PD0_BUTTON_PIN);
-	// Configure input interrupt for PD0 button on falling edge - keep interrupt disabled
-	GPIO_ExtIntConfig(PD0_BUTTON_PORT,PD0_BUTTON_PIN,PD0_BUTTON_PIN,false,true,true);
+	// Configure input interrupt for PD0 button on rising/falling edge - enable interrupts
+	GPIO_ExtIntConfig(PD0_BUTTON_PORT,PD0_BUTTON_PIN,PD0_BUTTON_PIN,true,true,true);
 	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
 
-	//GPIO_IntEnable(PD0_BUTTON_PIN);
-	ledstatus = 0;
+	button_state = 0x00;
 }
 
 void gpioLed0SetOn()
@@ -78,26 +77,48 @@ void gpioSetDisplayExtcomin(bool high)
 	}
 }
 
+uint8_t gpio_get_button_state(void)
+{
+	return button_state;
+}
+
 void GPIO_EVEN_IRQHandler(void)
 {
 	uint32_t gpio_pin_state;
 	// Disable interrupt nesting
 	__disable_irq();
 
-	// Acknowledge the interrupt and clear flags
+	// Acknowledge the interrupt and clear even interrupt flags
 	GPIO_IntClear(0x5555);
 
 	gpio_pin_state = GPIO_PortInGet(PD0_BUTTON_PORT);
 
-	gpio_pin_state = ((gpio_pin_state & PD0_BUTTON_PIN) >> PD0_BUTTON_PIN);
+	// Set shift pin state so it is 0 or 1
+	gpio_pin_state = ((gpio_pin_state & PD0_BUTTON_PIN_MASK) >> PD0_BUTTON_PIN);
 
-	if(gpio_pin_state == 1)
+	LOG_INFO("GPIO Pin state is %d",gpio_pin_state);
+
+	// If 0, button is pressed and GPIO pin is grounded
+	if(gpio_pin_state == 0)
 	{
 		gpioLed0SetOn();
+
+		if(server_security_state == pairingConfirmKey)
+		{
+			gecko_external_signal(PASSKEY_CONFIRM_MASK);
+		}
+		button_state = 0x01;
 	}
 	else
 	{
 		gpioLed0SetOff();
+		button_state = 0x00;
+	}
+
+	// Update characteristic if bonded
+	if(server_security_state == bonded)
+	{
+		gecko_external_signal(BUTTON_EVENT_MASK);
 	}
 
 	// Toggle LED0

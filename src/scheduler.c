@@ -39,6 +39,11 @@ void my_scheduler(myStateTypeDef *state_struct)
 		scheduler_confirm_passkey(state_struct);
 	}
 
+	// Check for BLE passkey confirmation event
+	if( ((state_struct->event_bitmask & BUTTON_EVENT_MASK) >> BUTTON_EVENT_POS) == 1 )
+	{
+		scheduler_update_button_status(state_struct);
+	}
 
 	// Handle state-driven events
 
@@ -272,6 +277,16 @@ void scheduler_confirm_passkey(myStateTypeDef *state_struct)
 
 	gecko_ble_security_confirm_passkey();
 
+}
+
+void scheduler_update_button_status(myStateTypeDef *state_struct)
+{
+	__disable_irq();
+	// Clear event bitmask
+	state_struct->event_bitmask &= ~BUTTON_EVENT_MASK;
+	__enable_irq();
+
+	gecko_ble_send_button_state();
 }
 
 void client_scheduler(myStateTypeDef *state_struct)

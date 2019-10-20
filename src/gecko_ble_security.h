@@ -1,8 +1,10 @@
 /*
  * gecko_ble_security.h
  *
+ * Header for BLE security-related functions
+ *
  *  Created on: Oct 19, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 #ifndef SRC_GECKO_BLE_SECURITY_H_
@@ -28,10 +30,28 @@ typedef enum {
 
 ServerSecurityState server_security_state;
 
+/**
+ * [gecko_ble_security_init]
+ * @description:  Initializes BLE stack for pairing.  Configures I/O capabilities,
+ *                sets device to bondable, removes prior bonding information, and
+ *                configures security requirements of system.
+ */
 void gecko_ble_security_init(void);
 
+/**
+ * [gecko_ble_security_confirm_passkey]
+ * @description:  User has confirmed passkey displayed on server is that same as
+ *                passkey displayed on cliet. If successful, will confirm bonding
+ */
 void gecko_ble_security_confirm_passkey(void);
 
+/**
+ * [gecko_security_update]
+ * @description:  Handles BLE-triggered events related to pairing
+ * @param        evt [Command packet containing event ID and associated data]
+ * @return           [True: Triggering event was handled
+ *                    False: Triggering event was not handled]
+ */
 bool gecko_security_update(struct gecko_cmd_packet* evt);
 
 #endif /* SRC_GECKO_BLE_SECURITY_H_ */

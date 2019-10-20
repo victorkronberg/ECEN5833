@@ -1,8 +1,12 @@
 /*
  * gecko_ble_security.c
  *
+ * BLE security functions.  Contains functions related to configuring security
+ * for pairing/bonding with external devices.  Also contains BLE stack event
+ * handler for security-related events.
+ *
  *  Created on: Oct 19, 2019
- *      Author: vkronber
+ *      Author: Victor Kronberg
  */
 
 
@@ -63,14 +67,22 @@ bool gecko_security_update(struct gecko_cmd_packet* evt)
 			displayPrintf(DISPLAY_ROW_PASSKEY,"");
 			displayPrintf(DISPLAY_ROW_ACTION,"");
 
+			// Update security state
+			server_security_state = bonded;
+
 			break;
 
 		case gecko_evt_sm_bonding_failed_id:
 			// Log reason for bonding failure
 			LOG_INFO("Bonding failed due to %d",evt->data.evt_sm_bonding_failed.reason);
+
 			// Clear passkey and action item
 			displayPrintf(DISPLAY_ROW_PASSKEY,"");
 			displayPrintf(DISPLAY_ROW_ACTION,"");
+
+			// Update security state
+			server_security_state = connectedNotPaired;
+
 			break;
 
 		default:

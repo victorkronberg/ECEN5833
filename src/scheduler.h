@@ -101,7 +101,23 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
  */
 void scheduler_one_hz_event_handler(void);
 
+/**
+ * [scheduler_confirm_passkey]
+ * @description:	Scheduler event to handle user confirmation of BLE pairing
+ * 								passkey.  Clears bitmask and calls BLE function to confirm
+ * 								passkey.
+ * @param        state_struct [Struct containing context for the state machine]
+ */
 void scheduler_confirm_passkey(myStateTypeDef *state_struct);
+
+/**
+ * [scheduler_update_button_status]
+ * @description:	Scheduler event to handle pressing or releasing of PB0.  Upon
+ * 								change to button's state, status is sent as an indication to
+ * 								bonded devices.
+ * @param        state_struct [Struct containing context for the state machine]
+ */
+void scheduler_update_button_status(myStateTypeDef *state_struct);
 
 /**
  * [client_scheduler description]

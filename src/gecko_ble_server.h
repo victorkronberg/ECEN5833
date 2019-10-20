@@ -72,6 +72,14 @@ bool gecko_update(struct gecko_cmd_packet* evt);
 void gecko_ble_send_temperature(uint32_t temperature);
 
 /**
+ * [gecko_ble_send_button_state]
+ * @description:  Sends indication containing current state of button
+ *                Pressed     = 0x01
+ *                Not pressed = 0x00
+ */
+void gecko_ble_send_button_state(void);
+
+/**
  * [gecko_ble_get_rssi]
  * @description:  Initiates RSSI retrieval using global connection handle
  */

@@ -266,6 +266,14 @@ void gecko_ble_send_temperature(uint32_t tempData)
 
 }
 
+void gecko_ble_send_button_state(void)
+{
+	uint8_t button_state;
+	button_state = gpio_get_button_state();
+
+	gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state);
+}
+
 
 void gecko_ble_get_rssi(void)
 {

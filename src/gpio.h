@@ -21,13 +21,15 @@
 
 #define PD0_BUTTON_PORT			(gpioPortF)
 #define PD0_BUTTON_PIN			(6)
+#define PD0_BUTTON_PIN_MASK		(0x40)
 
 // GPIO related LCD display #defines
 #define GPIO_SET_DISPLAY_EXT_COMIN_IMPLEMENTED 	(1)
 #define GPIO_DISPLAY_SUPPORT_IMPLEMENTED		(1)
 
 /**
- * @description:  Initialize GPIO pins for LED0 and 1
+ * @description:  Initialize GPIO pins for LED0 and 1 and initializes interrupts
+ *                on rising/falling edge of PB0
  */
 void gpioInit();
 
@@ -64,5 +66,14 @@ void gpioEnableDisplay(void);
  * @param        high [description]
  */
 void gpioSetDisplayExtcomin(bool high);
+
+/**
+ * [gpio_get_button_state]
+ * @description:  Returns the current state of PB0 to external functions
+ * @return        [uint8_t state of button press
+ *                Pressed     = 0x01
+ *                Not pressed = 0x00]
+ */
+uint8_t gpio_get_button_state(void);
 
 #endif /* SRC_GPIO_H_ */
