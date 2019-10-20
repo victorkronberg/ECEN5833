@@ -19,7 +19,18 @@
 #define BONDABLE			(1)
 #define CONFIRM				(1)
 
+typedef enum {
+  advertising,
+  connectedNotPaired,
+  pairingConfirmKey,
+  bonded
+} ServerSecurityState;
+
+ServerSecurityState server_security_state;
+
 void gecko_ble_security_init(void);
+
+void gecko_ble_security_confirm_passkey(void);
 
 bool gecko_security_update(struct gecko_cmd_packet* evt);
 

@@ -40,6 +40,7 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 	// Initially handle events related to advertising and resetting
 	handled = gecko_update(evt);
 
+	// If not handled, check if security-related events have occurred
 	if(!handled)
 	{
 		handled = gecko_security_update(evt);
@@ -60,6 +61,8 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 				// Update the LCD with connection state
 				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
 #endif
+				// Update security state
+				server_security_state = connectedNotPaired;
 
 				// Set the connection interval for current connection
 				// Set connection parameters
@@ -67,7 +70,7 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 				// Min and Max interval = value * 1.5ms
 				// Latency = number of intervals slave can skip
 				// Timeout = value * 10ms
-				// MIN/MAX conection length = value * 0.625ms
+				// MIN/MAX connection length = value * 0.625ms
 				gecko_cmd_le_connection_set_timing_parameters(conn_handle,CONNECTION_INTERVAL_75MS,CONNECTION_INTERVAL_75MS,
 						LATENCY_300MS,CONNECTION_TIMEOUT,0,MAX_CE_LENGTH);
 

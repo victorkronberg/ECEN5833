@@ -80,14 +80,28 @@ void gpioSetDisplayExtcomin(bool high)
 
 void GPIO_EVEN_IRQHandler(void)
 {
+	uint32_t gpio_pin_state;
 	// Disable interrupt nesting
 	__disable_irq();
 
 	// Acknowledge the interrupt and clear flags
 	GPIO_IntClear(0x5555);
 
+	gpio_pin_state = GPIO_PortInGet(PD0_BUTTON_PORT);
+
+	gpio_pin_state = ((gpio_pin_state & PD0_BUTTON_PIN) >> PD0_BUTTON_PIN);
+
+	if(gpio_pin_state == 1)
+	{
+		gpioLed0SetOn();
+	}
+	else
+	{
+		gpioLed0SetOff();
+	}
+
 	// Toggle LED0
-	GPIO_PinOutToggle(LED0_port, LED0_pin);
+	//GPIO_PinOutToggle(LED0_port, LED0_pin);
 
 	__enable_irq();
 

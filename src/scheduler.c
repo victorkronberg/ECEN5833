@@ -33,6 +33,12 @@ void my_scheduler(myStateTypeDef *state_struct)
 
 	}
 
+	// Check for BLE passkey confirmation event
+	if( ((state_struct->event_bitmask & PASSKEY_CONFIRM_MASK) >> PASSKEY_CONFIRM_POS) == 1 )
+	{
+		scheduler_confirm_passkey(state_struct);
+	}
+
 
 	// Handle state-driven events
 
@@ -255,6 +261,17 @@ void scheduler_one_hz_event_handler(void)
 
 	// Reset period interrupt
 	reset_periodic_timer();
+}
+
+void scheduler_confirm_passkey(myStateTypeDef *state_struct)
+{
+	__disable_irq();
+	// Clear event bitmask
+	state_struct->event_bitmask &= ~PASSKEY_CONFIRM_MASK;
+	__enable_irq();
+
+	gecko_ble_security_confirm_passkey();
+
 }
 
 void client_scheduler(myStateTypeDef *state_struct)

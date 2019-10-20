@@ -80,8 +80,8 @@
 #define EXIT_EVENT_MASK_POS			(4)
 #define ONE_HZ_EVENT_MASK			(0x0020)
 #define ONE_HZ_EVENT_MASK_POS		(5)
-
-#define RAND_MAX					(999999)
+#define PASSKEY_CONFIRM_MASK		(0x0040)
+#define PASSKEY_CONFIRM_POS			(6)
 
 uint32_t event_bitmask;
 uint32_t interrupt_event_bitmask;

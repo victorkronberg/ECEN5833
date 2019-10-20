@@ -101,6 +101,8 @@ void scheduler_exit_temperature_polling_loop(myStateTypeDef *state_struct);
  */
 void scheduler_one_hz_event_handler(void);
 
+void scheduler_confirm_passkey(myStateTypeDef *state_struct);
+
 /**
  * [client_scheduler description]
  * @description: Interrupt driven scheduler which controls client state machine. Handles
