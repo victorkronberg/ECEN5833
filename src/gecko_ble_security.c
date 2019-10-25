@@ -20,11 +20,9 @@ void gecko_ble_security_init(void)
 	gecko_cmd_sm_delete_bondings();
 
 	// Configure security requirements and I/O capabilities of system
-	uint8_t flags = (MITM_REQD|ENCRYPT_REQ_BOND|SECURE_ONLY|CONFIRM_BOND);
-	gecko_cmd_sm_configure(flags,sm_io_capability_displayyesno);
-
-	// Enable device to be bondable - by default this is disabled
-	gecko_cmd_sm_set_bondable_mode(BONDABLE);
+	// MITM is enable -> bonding is also enabled
+	uint8_t flags = (MITM_REQD|ENCRYPT_REQ_BOND|CONFIRM_BOND);
+	BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_configure(flags,sm_io_capability_displayyesno));
 
 	server_security_state = advertising;
 
@@ -44,7 +42,7 @@ bool gecko_security_update(struct gecko_cmd_packet* evt)
 	{
 		case gecko_evt_sm_confirm_bonding_id:
 			// Accept bonding request to initiate pairing
-			gecko_cmd_sm_bonding_confirm(evt->data.evt_sm_confirm_bonding.connection,CONFIRM);
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_bonding_confirm(evt->data.evt_sm_confirm_bonding.connection,CONFIRM));
 
 			// Store connection handle for passkey confirmation
 			pairing_conn_handle = evt->data.evt_sm_confirm_bonding.connection;

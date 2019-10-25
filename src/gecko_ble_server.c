@@ -71,8 +71,8 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 				// Latency = number of intervals slave can skip
 				// Timeout = value * 10ms
 				// MIN/MAX connection length = value * 0.625ms
-				gecko_cmd_le_connection_set_timing_parameters(conn_handle,CONNECTION_INTERVAL_75MS,CONNECTION_INTERVAL_75MS,
-						LATENCY_300MS,CONNECTION_TIMEOUT,0,MAX_CE_LENGTH);
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_set_timing_parameters(conn_handle,CONNECTION_INTERVAL_75MS,CONNECTION_INTERVAL_75MS,
+						LATENCY_300MS,CONNECTION_TIMEOUT,0,MAX_CE_LENGTH));
 
 				break;
 
@@ -241,7 +241,7 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 				gecko_ble_update_tx_power(TXPOWER_0DB);
 
 				// Delete any prior bonding information
-				gecko_cmd_sm_delete_bondings();
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
 
 				// Clear pending indication flags
 				__disable_irq();
@@ -398,7 +398,7 @@ void gecko_ble_update_tx_power(int16_t power)
 	struct gecko_msg_system_set_tx_power_rsp_t* rsp;
 
 	// Halt the system in order to change TX power
-	gecko_cmd_system_halt(1);
+	BTSTACK_CHECK_RESPONSE(gecko_cmd_system_halt(1));
 
 	// Update power
 	rsp = gecko_cmd_system_set_tx_power(power);
@@ -406,5 +406,5 @@ void gecko_ble_update_tx_power(int16_t power)
 	//LOG_INFO("TX power updated with a Power setting of %d",rsp->set_power);
 
 	// Resume system
-	gecko_cmd_system_halt(0);
+	BTSTACK_CHECK_RESPONSE(gecko_cmd_system_halt(0));
 }
