@@ -19,8 +19,6 @@
 #define LED1_port	gpioPortF
 #define LED1_pin	pin5
 
-uint8_t button_state;
-
 void gpioInit()
 {
 	//GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthStrongAlternateStrong);

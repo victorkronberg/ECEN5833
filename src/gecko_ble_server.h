@@ -31,8 +31,21 @@
 #define TXPOWER_POS_5DB				(50)
 #define TXPOWER_MAX					(100)
 
+// Pending Indication flags
+#define HTM_PENDING_MASK			(0x0001)
+#define HTM_PENDING_POS				(0)
+#define BUTTON_PENDING_MASK			(0x0002)
+#define BUTTON_PENDING_POS			(1)
+
 // Global variable containing connection handle
 uint8_t conn_handle;
+struct indications
+{
+	uint32_t indications;
+	uint32_t confirmations;
+} pending;
+uint8_t htmTempBuffer[5]; /* Stores the temperature data in the Health Thermometer (HTM) format. */
+uint8_t button_state;
 
 /**
  * [gecko_ble_init_LCD_status]

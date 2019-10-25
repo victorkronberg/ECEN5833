@@ -114,6 +114,43 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 					  __enable_irq();
 				  }
 				}
+
+				if( ((pending.confirmations & BUTTON_PENDING_MASK) >> BUTTON_PENDING_POS) == 1)
+				{
+					// Clear pending confirmation mask for button press
+					__disable_irq();
+					pending.confirmations &= ~BUTTON_PENDING_MASK;
+					__enable_irq();
+
+					if(((pending.indications & HTM_PENDING_MASK) >> HTM_PENDING_POS) == 1)
+					{
+						BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement,
+										5, htmTempBuffer));
+						// Set pendin confirmation mask for HTM
+						__disable_irq();
+						pending.indications &= ~HTM_PENDING_MASK;
+						pending.confirmations |= HTM_PENDING_MASK;
+						__enable_irq();
+					}
+				}
+
+				if( ((pending.confirmations & HTM_PENDING_MASK) >> HTM_PENDING_POS) == 1)
+				{
+					// Clear pending confirmation mask for button press
+					__disable_irq();
+					pending.confirmations &= ~HTM_PENDING_MASK;
+					__enable_irq();
+					// Check for pending indications
+					if(((pending.indications & BUTTON_PENDING_MASK) >> BUTTON_PENDING_POS) == 1)
+					{
+						BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state));
+						__disable_irq();
+						pending.indications &= ~BUTTON_PENDING_MASK;
+						pending.confirmations |= BUTTON_PENDING_MASK;
+						__enable_irq();
+					}
+				}
+
 				break;
 
 			// RSSI ready to be read
@@ -159,6 +196,12 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 			 * The last two parameters are duration and maxevents left as default. */
 			BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0, ADVERTISE_INTERVAL_250MS, ADVERTISE_INTERVAL_250MS, 0, 0));
 
+			// Initialize pending indication flags
+			__disable_irq();
+			pending.indications = 0;
+			pending.confirmations = 0;
+			__enable_irq();
+
 			gecko_ble_security_init();
 
 			// Set tx power to 0dB
@@ -199,6 +242,12 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 				// Delete any prior bonding information
 				gecko_cmd_sm_delete_bondings();
+
+				// Clear pending indication flags
+				__disable_irq();
+				pending.indications = 0;
+				pending.confirmations = 0;
+				__enable_irq();
 
 			  /* Restart advertising after client has disconnected */
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));
@@ -245,8 +294,6 @@ bool gecko_update(struct gecko_cmd_packet* evt)
 
 void gecko_ble_send_temperature(uint32_t tempData)
 {
-
-	uint8_t htmTempBuffer[5]; /* Stores the temperature data in the Health Thermometer (HTM) format. */
 	uint8_t flags = 0x00;   /* HTM flags set as 0 for Celsius, no time stamp and no temperature type. */
 	int32_t temperature;   /* Stores the temperature data read from the sensor in the correct format */
 	uint8_t *p = htmTempBuffer; /* Pointer to HTM temperature buffer needed for converting values to bitstream. */
@@ -262,23 +309,47 @@ void gecko_ble_send_temperature(uint32_t tempData)
 	/* Send indication of the temperature in htmTempBuffer to all "listening" clients.
 	* This enables the Health Thermometer in the Blue Gecko app to display the temperature.
 	*  0xFF as connection ID will send indications to all connections. */
-	gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, htmTempBuffer);
+	// Ensure no pending indications
+	if(pending.confirmations == 0)
+	{
+		BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement,
+				5, htmTempBuffer));
+		__disable_irq();
+		pending.confirmations |= HTM_PENDING_MASK;
+		__enable_irq();
+	}
+	else
+	{
+		__disable_irq();
+		pending.indications |= HTM_PENDING_MASK;
+		__enable_irq();
+	}
 
 }
 
 void gecko_ble_send_button_state(void)
 {
-	uint8_t button_state;
-	button_state = gpio_get_button_state();
-
-	gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state);
+	// Ensure no pending indications
+	if(pending.confirmations == 0)
+	{
+		BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state));
+		__disable_irq();
+		pending.confirmations |= BUTTON_PENDING_MASK;
+		__enable_irq();
+	}
+	else
+	{
+		__disable_irq();
+		pending.indications |= BUTTON_PENDING_MASK;
+		__enable_irq();
+	}
 }
 
 
 void gecko_ble_get_rssi(void)
 {
 	// Initiate RSSI retrieval before returning in order to tune TX Power
-	gecko_cmd_le_connection_get_rssi(conn_handle);
+	BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_get_rssi(conn_handle));
 }
 
 void gecko_ble_dynamic_tx_power_update(int8_t rssi)
