@@ -16,6 +16,13 @@ const uint8_t thermoService[2] = { 0x09, 0x18 };
 // Temperature Measurement characteristic UUID defined by Bluetooth SIG
 const uint8_t thermoChar[2] = { 0x1c, 0x2a };
 
+// Encrypted Button Service
+const uint8_t buttonService[16] = { 0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec,
+		0x87, 0x3e, 0x43, 0xc8, 0x38, 0x01, 0x00, 0x00, 0x00 };
+// Encrypted Button Characteristic
+const uint8_t buttonChar[16] = { 0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec,
+		0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00 };
+
 struct gecko_msg_system_get_bt_address_rsp_t *bt_address;;
 
 ConnProperties conn_properties;
@@ -50,6 +57,10 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	uint8_t* charValue;
 	bool handled;
 
+	handled = gecko_security_client_update(evt);
+
+	if(!handled)
+	{
 	// If not already handled, there is an open connection
 		handled = 1;
 		switch BGLIB_MSG_ID(evt->header)
@@ -62,6 +73,8 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 	#ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 					gecko_ble_init_LCD_status_client();
 	#endif
+					// Initialize security parameters
+					gecko_ble_security_init();
 
 					// Set passive scanning on 1Mb PHY
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_type(le_gap_phy_1m, 0));
@@ -116,15 +129,20 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				// Store the connection handle
 				conn_handle = evt->data.evt_le_connection_opened.connection;
 
+				gecko_cmd_sm_increase_security(conn_handle);
+
 #ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 				// Update the LCD with connection state
 				displayPrintf(DISPLAY_ROW_CONNECTION,"Connected");
 #endif
 
+				// Update security state
+				server_security_state = connectedNotPaired;
+
 				// Start discovery of primary services
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(conn_handle,2,(const uint8*)thermoService));
 
-				conn_state = discoverServices;
+				conn_state = discoverThermoServices;
 
 				break;
 
@@ -140,54 +158,115 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 			case gecko_evt_gatt_service_id:
 
-				// Grab Service handle for HTM
-				conn_properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;
+				if(conn_state == discoverThermoServices)
+				{
+					// Grab Service handle for HTM
+					conn_properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;
+				}
+				else if(conn_state == discoverButtonServices)
+				{
+					// Grab Service handle for button service
+					conn_properties.buttonServiceHandle = evt->data.evt_gatt_service.service;
+				}
 
 				break;
 
 			case gecko_evt_gatt_characteristic_id:
 
-				// Grab Characteristic handle for temperature measurement
-				conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
+				if(conn_state == discoverThermoCharacteristics)
+				{
+					// Grab Characteristic handle for temperature measurement
+					conn_properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
+				}
+				else if(conn_state == discoverButtonCharacteristics)
+				{
+					// Grab Characteristic handle for button state
+					conn_properties.buttonCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
+				}
 
 				break;
 
 			case gecko_evt_gatt_procedure_completed_id:
 
-				if(conn_state == discoverServices)
+				if(conn_state == discoverThermoServices)
+				{
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
+												16,(const uint8_t*)buttonService));
+					conn_state = discoverButtonServices;
+					break;
+				}
+				if(conn_state == discoverButtonServices)
 				{
 					// Discover services completed, start discovery of characteristics
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
 							conn_properties.thermometerServiceHandle,2,(const uint8_t*)thermoChar));
-					conn_state = discoverCharacteristics;
+					conn_state = discoverThermoCharacteristics;
 					break;
 				}
-				if(conn_state == discoverCharacteristics)
+				if(conn_state == discoverThermoCharacteristics)
+				{
+
+					// Discover services completed, start discovery of characteristics
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
+							conn_properties.buttonServiceHandle,16,(const uint8_t*)buttonChar));
+					conn_state = discoverButtonCharacteristics;
+					break;
+				}
+				if(conn_state == discoverButtonCharacteristics)
 				{
 					// Characteristic discovery complete, enable indications
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
-							conn_properties.thermometerCharacteristicHandle,gatt_indication));
-					conn_state = enableIndication;
+												conn_properties.thermometerCharacteristicHandle,gatt_indication));
+					conn_state = enableThermoIndication;
+					break;
+				}
+				if(conn_state == enableThermoIndication)
+				{
+					// Initiate a read to trigger security increas
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_read_characteristic_value(evt->data.evt_gatt_procedure_completed.connection,
+												conn_properties.buttonCharacteristicHandle));
+
+					conn_state = enableIndications;
+					break;
+				}
+				if(conn_state == enableIndications)
+				{
+					// Characteristic discovery complete, enable indications
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
+												conn_properties.buttonCharacteristicHandle,gatt_indication));
 
 #ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 					// Update the LCD with connection state
 					displayPrintf(DISPLAY_ROW_CONNECTION,"Handling Indications");
-#endif
 
 					break;
+#endif
 				}
-
 				break;
 
 			case gecko_evt_gatt_characteristic_value_id:
 
-				charValue = &(evt->data.evt_gatt_characteristic_value.value.data[0]); /* Stores the temperature data in the Health Thermometer (HTM) format. */
+				if(evt->data.evt_gatt_characteristic_value.characteristic == conn_properties.thermometerCharacteristicHandle)
+				{
+					charValue = &(evt->data.evt_gatt_characteristic_value.value.data[0]); /* Stores the temperature data in the Health Thermometer (HTM) format. */
 
-				// Shift HTM bitstream into readable format
-				conn_properties.temperature = (charValue[1] << 0) + (charValue[2] << 8) + (charValue[3] << 16);
+					// Shift HTM bitstream into readable format
+					conn_properties.temperature = (charValue[1] << 0) + (charValue[2] << 8) + (charValue[3] << 16);
 
-				// Retrieve temperature and print to LCD if display is enabled
-				gecko_ble_receive_temperature(conn_properties.temperature);
+					// Retrieve temperature and print to LCD if display is enabled
+					gecko_ble_receive_temperature(conn_properties.temperature);
+				}
+				else if(evt->data.evt_gatt_characteristic_value.characteristic == conn_properties.buttonCharacteristicHandle)
+				{
+					charValue = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
+
+					conn_properties.button_state = charValue[0];
+
+					LOG_INFO("Button value has been read");
+
+					displayPrintf(DISPLAY_ROW_ACTION,"Button State: 0x%02x",conn_properties.button_state);
+
+				}
 
 				// Send confirmation for the indication
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));
@@ -213,6 +292,9 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 
 		    	 conn_state = scanning;
 
+		    	 // Delete any prior bonding information
+		    	 BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
+
 #ifdef GPIO_DISPLAY_SUPPORT_IMPLEMENTED
 		    	 // Update LCD with advertising status
 		    	 displayPrintf(DISPLAY_ROW_CONNECTION,"Discovering");
@@ -224,6 +306,7 @@ bool gecko_ble_client_update(struct gecko_cmd_packet* evt)
 				handled = 0;
 				break;
 		}
+	}
 
 	return handled;
 }

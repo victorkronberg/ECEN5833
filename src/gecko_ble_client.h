@@ -14,9 +14,12 @@
 typedef enum {
   scanning,
   opening,
-  discoverServices,
-  discoverCharacteristics,
-  enableIndication,
+  discoverThermoServices,
+  discoverButtonServices,
+  discoverThermoCharacteristics,
+  discoverButtonCharacteristics,
+  enableThermoIndication,
+  enableIndications,
   running
 } ConnState;
 
@@ -27,6 +30,9 @@ typedef struct {
   uint32_t thermometerServiceHandle;
   uint16_t thermometerCharacteristicHandle;
   uint32_t temperature;
+  uint32_t buttonServiceHandle;
+  uint16_t buttonCharacteristicHandle;
+  uint32_t button_state;
 } ConnProperties;
 
 /**
@@ -72,5 +78,6 @@ float gattUint32ToFloat(const uint8_t *value_start_little_endian);
  * @return                      [True if match, false if not]
  */
 bool findStaticBluetoothAddress(bd_addr server_address,bd_addr target_address);
+
 
 #endif /* SRC_GECKO_BLE_CLIENT_H_ */

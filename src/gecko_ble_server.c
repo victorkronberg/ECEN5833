@@ -67,7 +67,7 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 				// Set the connection interval for current connection
 				// Set connection parameters
 				// First parameter is connection handle
-				// Min and Max interval = value * 1.5ms
+				// Min and Max interval = value * 1.25ms
 				// Latency = number of intervals slave can skip
 				// Timeout = value * 10ms
 				// MIN/MAX connection length = value * 0.625ms
@@ -126,7 +126,7 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 					{
 						BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement,
 										5, htmTempBuffer));
-						// Set pendin confirmation mask for HTM
+						// Set pending confirmation mask for HTM
 						__disable_irq();
 						pending.indications &= ~HTM_PENDING_MASK;
 						pending.confirmations |= HTM_PENDING_MASK;

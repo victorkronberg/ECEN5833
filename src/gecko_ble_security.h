@@ -54,4 +54,6 @@ void gecko_ble_security_confirm_passkey(void);
  */
 bool gecko_security_update(struct gecko_cmd_packet* evt);
 
+bool gecko_security_client_update(struct gecko_cmd_packet* evt);
+
 #endif /* SRC_GECKO_BLE_SECURITY_H_ */

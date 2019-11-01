@@ -264,6 +264,13 @@ void scheduler_one_hz_event_handler(void)
 	// Update LCD display
 	displayUpdate();
 
+#ifdef DEVICE_IS_BLE_SERVER
+	if(server_security_state == bonded)
+	{
+		gecko_ble_send_button_state();
+	}
+#endif
+
 	// Reset period interrupt
 	reset_periodic_timer();
 }
@@ -302,4 +309,11 @@ void client_scheduler(myStateTypeDef *state_struct)
 		scheduler_one_hz_event_handler();
 
 	}
+
+	// Check for BLE passkey confirmation event
+	if( ((state_struct->event_bitmask & PASSKEY_CONFIRM_MASK) >> PASSKEY_CONFIRM_POS) == 1 )
+	{
+		scheduler_confirm_passkey(state_struct);
+	}
+
 }
