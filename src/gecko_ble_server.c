@@ -114,8 +114,10 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 					  __enable_irq();
 				  }
 				}
-
-				if( ((pending.confirmations & BUTTON_PENDING_MASK) >> BUTTON_PENDING_POS) == 1)
+				// Check for pending button press confirmation and that the correct confirmation was sent
+				if( (((pending.confirmations & BUTTON_PENDING_MASK) >> BUTTON_PENDING_POS) == 1)
+						&& (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_button_state)
+						&& (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02))
 				{
 					// Clear pending confirmation mask for button press
 					__disable_irq();
@@ -124,17 +126,12 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 
 					if(((pending.indications & HTM_PENDING_MASK) >> HTM_PENDING_POS) == 1)
 					{
-						BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement,
-										5, htmTempBuffer));
-						// Set pending confirmation mask for HTM
-						__disable_irq();
-						pending.indications &= ~HTM_PENDING_MASK;
-						pending.confirmations |= HTM_PENDING_MASK;
-						__enable_irq();
+						gecko_ble_send_temperature(temp_value);
 					}
-				}
-
-				if( ((pending.confirmations & HTM_PENDING_MASK) >> HTM_PENDING_POS) == 1)
+				}	// Check for pending HTM confirmation and that the correct confirmation was sent
+				else if( (((pending.confirmations & HTM_PENDING_MASK) >> HTM_PENDING_POS) == 1)
+						&& (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
+						&& (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02))
 				{
 					// Clear pending confirmation mask for button press
 					__disable_irq();
@@ -143,11 +140,7 @@ bool gecko_ble_server_update(struct gecko_cmd_packet* evt)
 					// Check for pending indications
 					if(((pending.indications & BUTTON_PENDING_MASK) >> BUTTON_PENDING_POS) == 1)
 					{
-						BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state));
-						__disable_irq();
-						pending.indications &= ~BUTTON_PENDING_MASK;
-						pending.confirmations |= BUTTON_PENDING_MASK;
-						__enable_irq();
+						gecko_ble_send_button_state();
 					}
 				}
 
@@ -309,40 +302,37 @@ void gecko_ble_send_temperature(uint32_t tempData)
 	/* Send indication of the temperature in htmTempBuffer to all "listening" clients.
 	* This enables the Health Thermometer in the Blue Gecko app to display the temperature.
 	*  0xFF as connection ID will send indications to all connections. */
-	// Ensure no pending indications
+	// Ensure no pending indications and another indication is not sent after we have confirmed one is not pending
+	__disable_irq();
 	if(pending.confirmations == 0)
 	{
 		BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement,
 				5, htmTempBuffer));
-		__disable_irq();
 		pending.confirmations |= HTM_PENDING_MASK;
-		__enable_irq();
 	}
 	else
 	{
-		__disable_irq();
 		pending.indications |= HTM_PENDING_MASK;
-		__enable_irq();
 	}
+	__enable_irq();
 
 }
 
 void gecko_ble_send_button_state(void)
 {
-	// Ensure no pending indications
+	// Ensure another indication is not initiated during transmission
+	__disable_irq();
 	if(pending.confirmations == 0)
 	{
 		BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_server_send_characteristic_notification(0xFF,gattdb_button_state,1,&button_state));
-		__disable_irq();
+		pending.indications &= ~BUTTON_PENDING_MASK;
 		pending.confirmations |= BUTTON_PENDING_MASK;
-		__enable_irq();
 	}
 	else
 	{
-		__disable_irq();
 		pending.indications |= BUTTON_PENDING_MASK;
-		__enable_irq();
 	}
+	__enable_irq();
 }
 
 

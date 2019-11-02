@@ -35,6 +35,9 @@ typedef struct	StateStruct {
 // Global state structure
 myStateTypeDef my_state_struct;
 
+// Global temperature value
+uint32_t temp_value;
+
 /**
  * [my_scheduler]
  * @description: Interrupt driven scheduler which controls server state machine. Handles

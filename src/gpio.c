@@ -113,11 +113,13 @@ void GPIO_EVEN_IRQHandler(void)
 		button_state = 0x00;
 	}
 
+
 	// Update characteristic if bonded
 	if(server_security_state == bonded)
 	{
 		gecko_external_signal(BUTTON_EVENT_MASK);
 	}
+
 
 	// Toggle LED0
 	//GPIO_PinOutToggle(LED0_port, LED0_pin);

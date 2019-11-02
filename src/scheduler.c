@@ -199,7 +199,6 @@ void scheduler_start_i2c_read(void)
 
 void scheduler_return_temp_then_wait(void)
 {
-	uint32_t temp_value;
 	uint32_t tempF_value;
 	// Calculate temperature from last measured value (milli-degrees C)
 	temp_value = si7021_return_last_temp();
@@ -264,10 +263,10 @@ void scheduler_one_hz_event_handler(void)
 	// Update LCD display
 	displayUpdate();
 
-#ifdef DEVICE_IS_BLE_SERVER
+#ifdef BUILD_INCLUDES_BLE_SERVER
 	if(server_security_state == bonded)
 	{
-		gecko_ble_send_button_state();
+		//gecko_ble_send_button_state();
 	}
 #endif
 
