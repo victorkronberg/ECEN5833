@@ -54,6 +54,13 @@ void gecko_ble_security_confirm_passkey(void);
  */
 bool gecko_security_update(struct gecko_cmd_packet* evt);
 
+/**
+ * [gecko_security_client_update]
+ * @description:  Handles BLE-triggered events related to client pairing
+ * @param        evt [Command packet containing event ID and associated data]
+ * @return           [True: Triggering event was handled
+ *                    False: Triggering event was not handled]
+ */
 bool gecko_security_client_update(struct gecko_cmd_packet* evt);
 
 #endif /* SRC_GECKO_BLE_SECURITY_H_ */
