@@ -128,7 +128,72 @@ eIMU_ERRORS icm20948_low_power(struct imu_dev *dev, bool low_power)
 }
 
 // Set sampling mode
+eIMU_ERRORS icm20948_sampling_mode(struct imu_dev *dev, uint8_t sensors, uint8_t sample_mode)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
 
+	if(!sensors & (ICM_20948_GYR_CYC_MASK | ICM_20948_ACC_CYC_MASK))
+	{
+		return eIMUErrorInvalidRange;
+	}
+
+	rslt = icm20948_set_bank(dev,USER_BANK0);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	rslt = icm20948_get_regs(LP_CONFIG,reg_data,ONE_BYTE,dev);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	reg_data |= (sensors & sample_mode);
+
+	rslt = icm20948_set_regs(LP_CONFIG,reg_data,ONE_BYTE,dev);
+
+	return rslt;
+
+}
+
+// Set sampling mode
+eIMU_ERRORS icm20948_sensor_enable(struct imu_dev *dev, uint8_t sensors, bool enable)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
+
+	if(!sensors & (PWR_MGMT_GYR_MASK | PWR_MGMT_ACC_MASK))
+	{
+		return eIMUErrorInvalidRange;
+	}
+
+	rslt = icm20948_set_bank(dev,USER_BANK0);
+
+	rslt = icm20948_get_regs(PWR_MGMT_2,reg_data,ONE_BYTE,dev);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	if(enable)
+	{
+		reg_data &= ~sensors;
+	}
+	else
+	{
+		reg_data |= sensors;
+	}
+
+	rslt = icm20948_set_regs(PWR_MGMT_2,reg_data,ONE_BYTE,dev);
+
+	return rslt;
+
+}
 
 // Set scale
 

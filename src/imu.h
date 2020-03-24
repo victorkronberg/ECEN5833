@@ -18,23 +18,30 @@
 #define		WAKE_MODE		(0x00)
 #define		AUTO_CLK		(0x01)
 
-//#define		PWR_MGMT_2	(0x07)
-#define		ACCEL_DIS		(0x38)
-#define		GYRO_DIS		(0x03)
 
-#define		ACCEL_DATA		(0x45)
-#define		GYRO_DATA		(0x51)
 
 #define 	BANK_SELECT		(0x7F)
 
+//ICM20948 User Bank Register Masks
 #define		USER_BANK_MASK	(0x30)
 #define		USER_BANK_SHIFT	(4)
 
 #define		USER_BANK0		(0x00)
 
+// ICM20948 User Bank 0: LP_CONFIG Macros
+#define		ICM_20948_GYR_CYC_MASK		(0x10)
+#define 	ICM_20948_ACC_CYC_MASK		(0x20)
+#define		ICM_20948_CONTINUOUS		(0x00)
+#define		ICM_20948_CYCLED			(0xFF)
+
+// ICM20948 User Bank 0: PWR_MGMT_1 Macros
 #define 	PWR_MGMT_LOW_PWR_MASK	(0x20)
 #define 	PWR_MGMT_SLEEP_MASK		(0x40)
 #define 	PWR_MGMT_RESET_MASK		(0x80)
+
+// ICM20948 User Bank 0: PWR_MGMT_2 Macros
+#define		PWR_MGMT_ACC_MASK		(0x38)
+#define		PWR_MGMT_GYR_MASK		(0x03)
 
 #define		ONE_BYTE		(1)
 
