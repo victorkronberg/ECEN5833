@@ -46,6 +46,37 @@ int main(void)
 
 	/* Event pointer for handling events */
 	struct gecko_cmd_packet* evt;
+	//int8_t rslt = BMP3_OK;
+
+	uint16_t setting_sel;
+	uint8_t sensor_comp;
+	uint32_t msb,lsb,combined;
+	//struct bmp3_dev bmp_device;
+	//struct bmp3_data data;
+
+	//bmp_device.dev_id = ICM_DEV_ID;
+	//bmp_device.read = &spi_read;
+	//bmp_device.write = &spi_write;
+	//bmp_device.delay_ms = &delay_ms;
+	//bmp_device.intf = BMP3_SPI_INTF;
+
+	struct bme280_dev dev;
+	struct bme280_data comp_data;
+	int8_t rslt = 0;
+
+	/* Sensor_0 interface over SPI with native chip select line */
+	dev.dev_id = ICM_DEV_ID;
+	dev.intf = BME280_SPI_INTF;
+	dev.read = &spi_read;
+	dev.write = &spi_write;
+	dev.delay_ms = &delay_ms;
+
+
+
+
+
+
+	uint8_t reg_data[RX_BUFFER_SIZE] = {0};
 
   // Initialize device
   initMcu();
@@ -58,19 +89,21 @@ int main(void)
   logInit();
 
   // Initialize event flag
-  my_state_struct.event_bitmask = 0;
+  //my_state_struct.event_bitmask = 0;
 
   // Initialize GPIO
-  gpioInit();
+  //gpioInit();
 
   // Initialize timer
   init_letimer();
 
-  init_si7021();
+  initUSART1();
 
-  i2c_init();
+  //init_si7021();
 
-  displayInit();
+  //i2c_init();
+
+  //displayInit();
 
 #ifdef BUILD_INCLUDES_BLE_SERVER
   my_state_struct.current_state = STATE0_WAIT_FOR_BLE;
@@ -84,52 +117,73 @@ int main(void)
 
   // Initialize BLE stack.
   // This is disabled for assignments #2, 3 and 4 as it will prevent sleep modes below EM2
-  gecko_init(&config);
+  //gecko_init(&config);
 
-  __enable_irq();
+  //__enable_irq();
+
+  uint8_t chip_id = 0;
 
   /* Infinite loop */
+
+  //rslt = bme280_init(&dev);
+
+  //rslt = bmp3_init(&bmp_device);
+
+  //LOG_INFO("Initilization result: %d", rslt);
+
+  //bmp388_set_normal_mode(&bmp_device);
+
+  //stream_sensor_data_normal_mode(&dev);
+  spi_read(ICM_DEV_ID,WHO_AM_I,reg_data,1);
+
+  spi_read(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
+
+  // Enable Gyro and Accel
+  reg_data[0] = 0;
+  spi_write(ICM_DEV_ID,PWR_MGMT_2,reg_data,1);
+
+  reg_data[0] = WAKE_MODE|AUTO_CLK;
+
+  // Wake the device
+  spi_write(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
+
   while (1)
   {
-
-#if BUILD_INCLUDES_BLE_SERVER
 		// Check for external event
-		if(my_state_struct.event_bitmask != 0)
-		{
+		//if(my_state_struct.event_bitmask != 0)
+		//{
 			// Call scheduler
-			my_scheduler(&my_state_struct);
+		//	my_scheduler(&my_state_struct);
+		//	SLEEP_Sleep();
 
-		}
-		else
-		{
-			/* Check for stack event. */
-			// BLE sleep
-			evt = gecko_wait_event();
+		//}
 
-			//LOG_INFO("Wake event");
-			// Server BLE update
-			gecko_ble_server_update(evt);
-		}
-#endif
+	  //bmp388_get_sensor_data(&bmp_device);
 
-#if BUILD_INCLUDES_BLE_CLIENT
+	  //rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &dev);
+	  //print_sensor_data(&comp_data);
 
-		if(my_state_struct.event_bitmask != 0)
-		{
-			client_scheduler(&my_state_struct);
-		}
-		else
-		{
-			/* Check for stack event. */
-			// BLE sleep
-			evt = gecko_wait_event();
+	  delay_ms(50);
+	  spi_read(ICM_DEV_ID,ACCEL_XOUT_H,reg_data,6);
+	  msb = reg_data[0] << 8;
+	  lsb = reg_data[1];
+	  combined = msb | lsb;
+	  LOG_INFO("X-axis: %d", combined);
+	  msb = reg_data[2] << 8;
+	  lsb = reg_data[3];
+	  combined = msb | lsb;
+	  LOG_INFO("Y-axis: %d", combined);
+	  msb = reg_data[4] << 8;
+	  lsb = reg_data[5];
+	  combined = msb | lsb;
+	  LOG_INFO("Z-axis: %d", combined);
+	  delay_ms(50);
+	  spi_read(ICM_DEV_ID,GYRO_DATA,reg_data,6);
 
-			//LOG_INFO("Wake event");
-			// Client BLE update
-			gecko_ble_client_update(evt);
-		}
 
-#endif
+	  //spi_read(ICM_DEV_ID, BMP3_CHIP_ID_ADDR, reg_data, 3);
+
+	  //LOG_INFO("%d,%d,%d,%d",reg_data[0],reg_data[1],reg_data[2],reg_data[3]);
 
   }
 }

@@ -1,7 +1,6 @@
 /***************************************************************************//**
  * @file
  * @brief Timer/counter (TIMER) peripheral API
- * @version 5.8.1
  *******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories Inc. www.silabs.com</b>

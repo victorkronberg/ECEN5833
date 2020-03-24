@@ -2,7 +2,6 @@
  * @file
  * @brief General Purpose IO (GPIO) peripheral API
  *   devices.
- * @version 5.8.1
  *******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories Inc. www.silabs.com</b>

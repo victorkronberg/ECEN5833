@@ -57,6 +57,11 @@
 #include "ble_device_type.h"
 #include "display.h"
 #include "gecko_ble_security.h"
+#include "spi.h"
+//#include "bmp3.h"
+#include "bme280.h"
+#include "pressure_sensor.h"
+#include "imu.h"
 
 #ifndef MAX_CONNECTIONS
 #define MAX_CONNECTIONS 4

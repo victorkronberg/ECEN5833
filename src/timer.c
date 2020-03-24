@@ -47,7 +47,7 @@ void init_letimer(void)
 	// Add overflow handling mechanism if time
 	LETIMER_RepeatSet(LETIMER0,LETimerREP0,MAX_COUNTER);
 
-	NVIC_EnableIRQ(LETIMER0_IRQn);
+	//NVIC_EnableIRQ(LETIMER0_IRQn);
 
 	enable_letimer();
 
@@ -116,21 +116,41 @@ void disable_timer_interrupts(void)
 
 void delay_ms(uint32_t time_in_ms)
 {
-	uint32_t timer_delta;
+	volatile uint32_t timer_end, timer_start, timer_delta;
+	volatile uint32_t timer_compare;
+	volatile bool overflow = false;
 
-	__disable_irq();
+	//__disable_irq();
 	// Calculate timer value based on current CNT and time to next interrupt
-	timer_delta = calculate_timer(time_in_ms);
+	timer_end = calculate_timer(time_in_ms);
+	timer_start = LETIMER0->CNT;
+	timer_delta = timer_start - timer_end;
+
+		while(!overflow)
+		{
+			timer_compare = timer_start - LETIMER0->CNT;
+			if(timer_compare >= timer_delta)
+			{
+				overflow = true;
+			}
+		}
+
+	//uint32_t i,j;
+	//for(j=0;j<time_in_ms;j++)
+	//{
+	//	for(i=0;i<50000;i++){}
+	//}
 
 	//Load compare register
-	LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_delta);
+	//LETIMER_CompareSet(LETIMER0,LETimerCOMP0,timer_delta);
 
 	// Clear COMP0 interrupt flag
-	LETIMER_IntClear(LETIMER0, LETIMER_IEN_COMP0);
+	//LETIMER_IntClear(LETIMER0, LETIMER_IEN_COMP0);
 
 	// Enable LETIMER Interrupts on COMP0
-	LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP0);
-	__enable_irq();
+	//LETIMER_IntEnable(LETIMER0,LETIMER_IEN_COMP0);
+	//__enable_irq();
+
 
 	return;
 
