@@ -33,17 +33,9 @@ eIMU_ERRORS icm20948_set_bank(struct imu_dev *dev,uint8_t bank)
 
 	bank = (bank << USER_BANK_SHIFT) & USER_BANK_MASK;
 
-	rslt = icm20948_get_regs(REG_BANK_SEL,reg_data,ONE_BYTE,dev);
+	reg_data[0] = bank;
 
-	if(rslt == eIMUErrorIMUok)
-	{
-		if(reg_data[0]!=bank)
-		{
-			reg_data[0] = bank;
-
-			rslt = icm20948_set_regs(REG_BANK_SEL,reg_data,ONE_BYTE,dev);
-		}
-	}
+	rslt = icm20948_set_regs(REG_BANK_SEL,reg_data,ONE_BYTE,dev);
 
 	return rslt;
 
@@ -59,16 +51,84 @@ eIMU_ERRORS icm20948_sw_reset(struct imu_dev *dev)
 
 	if(rslt == eIMUErrorIMUok)
 	{
-		rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+			reg_data[0] = PWR_MGMT_RESET_MASK;
+
+			rslt = icm20948_set_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+
+			// Delay for
 	}
+
+	return rslt;
 
 }
 
 // Enable/Disable sleep
+eIMU_ERRORS icm20948_sleep(struct imu_dev *dev, bool sleep)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
+
+	rslt = icm20948_set_bank(dev,USER_BANK0);
+
+	if(rslt == eIMUErrorIMUok)
+	{
+		rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+
+		if(rslt == eIMUErrorIMUok)
+		{
+			if(sleep)
+			{
+				reg_data |= PWR_MGMT_SLEEP_MASK;
+				rslt = icm20948_set_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+			}
+			else
+			{
+				reg_data &= ~PWR_MGMT_SLEEP_MASK;
+				rslt = icm20948_set_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+				// Delay 20ms for accelerometer or 35ms for gyroscope
+				dev->delay_ms(35);
+			}
+		}
+	}
+
+	return rslt;
+
+}
 
 // Enable/disable low power
+eIMU_ERRORS icm20948_low_power(struct imu_dev *dev, bool low_power)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
+
+	rslt = icm20948_set_bank(dev,USER_BANK0);
+
+	if(rslt == eIMUErrorIMUok)
+	{
+		rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+
+		if(rslt == eIMUErrorIMUok)
+		{
+			if(low_power)
+			{
+				reg_data |= PWR_MGMT_LOW_PWR_MASK;
+				rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+			}
+			else
+			{
+				reg_data &= ~PWR_MGMT_LOW_PWR_MASK;
+				rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+			}
+		}
+
+	}
+
+	return rslt;
+
+}
 
 // Set sampling mode
+
 
 // Set scale
 

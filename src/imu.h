@@ -32,6 +32,10 @@
 
 #define		USER_BANK0		(0x00)
 
+#define 	PWR_MGMT_LOW_PWR_MASK	(0x20)
+#define 	PWR_MGMT_SLEEP_MASK		(0x40)
+#define 	PWR_MGMT_RESET_MASK		(0x80)
+
 #define		ONE_BYTE		(1)
 
 
