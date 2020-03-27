@@ -13,6 +13,10 @@
 #define 	WHO_AM_I		(0x00)
 #define		WHO_AM_I_ID		(0xEA)
 
+#define		ICM_ENABLE		(true)
+#define		ICM_DISABLE		(false)
+
+
 //#define		PWR_MGMT_1	(0x06)
 #define		SLEEP_MODE		(0X40)
 #define		WAKE_MODE		(0x00)
@@ -27,6 +31,9 @@
 #define		USER_BANK_SHIFT	(4)
 
 #define		USER_BANK0		(0x00)
+#define		USER_BANK1		(0x01)
+#define		USER_BANK2		(0x02)
+#define		USER_BANK3		(0x03)
 
 // ICM20948 User Bank 0: LP_CONFIG Macros
 #define		ICM_20948_GYR_CYC_MASK		(0x10)
@@ -42,6 +49,23 @@
 // ICM20948 User Bank 0: PWR_MGMT_2 Macros
 #define		PWR_MGMT_ACC_MASK		(0x38)
 #define		PWR_MGMT_GYR_MASK		(0x03)
+
+// ICM20948 User Bank 2: GYRO_CONFIG_1 Macros
+#define		GYRO_CONFIG				(0x01)
+#define		GFSS_250_DPS			(0x00)
+#define		GFSS_500_DPS			(0x01)
+#define		GFSS_1000_DPS			(0x02)
+#define		GFSS_2000_DPS			(0x03)
+#define		GFSS_SHIFT				(1)
+
+
+// ICM20948 User Bank 2: ACCEL_CONFIG_1 Macros
+#define		ACCEL_CONFIG			(0x02)
+#define		AFSS_2_G				(0x00)
+#define		AFSS_4_G				(0x01)
+#define		AFSS_8_G				(0x02)
+#define		AFSS_16_G				(0x03)
+#define		AFSS_SHIFT				(1)
 
 #define		ONE_BYTE		(1)
 
@@ -197,5 +221,10 @@ struct imu_dev
     /*! Delay function pointer */
     imu_delay_fptr_t delay_ms;
 };
+
+typedef struct{
+	uint8_t gyro;
+	uint8_t accel;
+} imu_full_scale_select_t;
 
 #endif /* SRC_IMU_H_ */
