@@ -178,7 +178,7 @@ int main(void)
 	  combined = msb | lsb;
 	  LOG_INFO("Z-axis: %d", combined);
 	  delay_ms(50);
-	  spi_read(ICM_DEV_ID,GYRO_DATA,reg_data,6);
+	  //spi_read(ICM_DEV_ID,GYRO_DATA,reg_data,6);
 
 
 	  //spi_read(ICM_DEV_ID, BMP3_CHIP_ID_ADDR, reg_data, 3);

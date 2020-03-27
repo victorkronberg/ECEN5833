@@ -51,7 +51,7 @@
 #define		PWR_MGMT_GYR_MASK		(0x03)
 
 // ICM20948 User Bank 2: GYRO_CONFIG_1 Macros
-#define		GYRO_CONFIG				(0x01)
+#define		GYRO_CONFIGURATION		(0x01)
 #define		GFSS_250_DPS			(0x00)
 #define		GFSS_500_DPS			(0x01)
 #define		GFSS_1000_DPS			(0x02)
@@ -62,7 +62,7 @@
 
 
 // ICM20948 User Bank 2: ACCEL_CONFIG_1 Macros
-#define		ACCEL_CONFIG			(0x02)
+#define		ACCEL_CONFIGURATION		(0x02)
 #define		AFSS_2_G				(0x00)
 #define		AFSS_4_G				(0x01)
 #define		AFSS_8_G				(0x02)
@@ -76,6 +76,30 @@
 #define 	ACCELEROMETER			(0x01)
 #define		GYROSCOPE				(0x02)
 #define		THERMOMETER				(0x04)
+
+#define		X_AXIS_H				(0)
+#define		X_AXIS_L				(1)
+#define		Y_AXIS_H				(2)
+#define		Y_AXIS_L				(3)
+#define		Z_AXIS_H				(4)
+#define		Z_AXIS_L				(5)
+
+// Compensation values
+#define		ACCEL_2G				(16384)
+#define		ACCEL_4G				(8192)
+#define		ACCEL_8G				(4096)
+#define		ACCEL_16G				(2048)
+
+#define		GYRO_250DPS_100X		(13107)
+#define		GYRO_500DPS_100X		(6554)
+#define		GYRO_1000DPS_100X		(3277)
+#define		GYRO_2000DPS_100X		(1638)
+
+#define		ROOM_TEMP_OFFSET_100X	(2100)
+#define		TEMP_SENSITIVITY_100X	(33387)
+
+#define		TEMP_H					(0)
+#define		TEMP_L					(1)
 
 #define		ONE_BYTE		(1)
 #define		TWO_BYTES		(2)
@@ -213,6 +237,33 @@ typedef enum imu_errors {
 typedef int8_t (*imu_com_fptr_t)(uint8_t dev_id, uint8_t reg_addr, uint8_t *data, uint16_t len);
 typedef void (*imu_delay_fptr_t)(uint32_t period);
 
+typedef struct{
+	uint8_t gyro;
+	uint16_t accel;
+} imu_sample_rate_t;
+
+typedef struct{
+	uint8_t gyro;
+	uint32_t gyro_divisor[4];
+	uint8_t accel;
+	uint32_t accel_divisor[4];
+} imu_full_scale_t;
+
+typedef struct{
+	uint8_t gyro;
+	uint8_t accel;
+} imu_dplf_t;
+
+typedef struct{
+	uint32_t gyroscope_x;
+	uint32_t gyroscope_y;
+	uint32_t gyroscope_z;
+	uint32_t accelerometer_x;
+	uint32_t accelerometer_y;
+	uint32_t accelerometer_z;
+	uint32_t temperature;
+} imu_sensor_data_t;
+
 /*
  * @brief IMU device struct
  */
@@ -233,31 +284,50 @@ struct imu_dev
 
     /*! Delay function pointer */
     imu_delay_fptr_t delay_ms;
+
+    /*! DPLF settings */
+    imu_dplf_t dplf_settings;
+
+    /*! Sample rate settings */
+    imu_sample_rate_t sample_rate;
+
+    /*! Full Scale range settings */
+    imu_full_scale_t full_scale;
+
+    /*! Sensor data */
+    imu_sensor_data_t sensor_data;
+
 };
 
-typedef struct{
-	uint8_t gyro;
-	uint16_t accel;
-} imu_sample_rate_t;
 
-typedef struct{
-	uint8_t gyro;
-	uint8_t accel;
-} imu_full_scale_select_t;
+eIMU_ERRORS icm20948_init(struct imu_dev *dev);
 
-typedef struct{
-	uint8_t gyro;
-	uint8_t accel;
-} imu_dplf_t;
+eIMU_ERRORS icm20948_set_bank(struct imu_dev *dev,uint8_t bank);
 
-typedef struct{
-	uint32_t gyroscope_x;
-	uint32_t gyroscope_y;
-	uint32_t gyroscope_z;
-	uint32_t accelerometer_x;
-	uint32_t accelerometer_y;
-	uint32_t accelerometer_z;
-	uint32_t temperature;
-} imu_sensor_data_t;
+eIMU_ERRORS icm20948_sw_reset(struct imu_dev *dev);
+
+eIMU_ERRORS icm20948_sleep(struct imu_dev *dev, bool sleep);
+
+eIMU_ERRORS icm20948_low_power(struct imu_dev *dev, bool low_power);
+
+eIMU_ERRORS icm20948_sampling_mode(struct imu_dev *dev, uint8_t sensors, uint8_t sample_mode);
+
+eIMU_ERRORS icm20948_sensor_enable(struct imu_dev *dev, uint8_t sensors, bool enable);
+
+eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors);
+
+eIMU_ERRORS icm20948_set_dlpf(struct imu_dev *dev, uint8_t sensors, bool enable_dplf);
+
+eIMU_ERRORS icm20948_get_agmt(struct imu_dev *dev, uint8_t sensors);
+
+eIMU_ERRORS icm20948_parse_sensor_data(struct imu_dev *dev, uint8_t *reg_data, uint8_t sensors);
+
+eIMU_ERRORS icm20948_compensate_data(struct imu_dev *dev,uint8_t sensors);
+
+eIMU_ERRORS icm20948_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint16_t len, const struct imu_dev *dev);
+
+eIMU_ERRORS icm20948_set_regs(uint8_t reg_addr, uint8_t *reg_data, uint16_t len, const struct imu_dev *dev);
+
+eIMU_ERRORS icm20948_null_ptr_check(const struct imu_dev *dev);
 
 #endif /* SRC_IMU_H_ */
