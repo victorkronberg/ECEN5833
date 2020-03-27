@@ -58,6 +58,8 @@
 #define		GFSS_2000_DPS			(0x03)
 #define		GFSS_SHIFT				(1)
 
+#define 	GDPLF_SHIFT				(3)
+
 
 // ICM20948 User Bank 2: ACCEL_CONFIG_1 Macros
 #define		ACCEL_CONFIG			(0x02)
@@ -67,7 +69,18 @@
 #define		AFSS_16_G				(0x03)
 #define		AFSS_SHIFT				(1)
 
+#define		ADPLF_SHIFT				(1)
+
+// General ICM20948 Macros
+
+#define 	ACCELEROMETER			(0x01)
+#define		GYROSCOPE				(0x02)
+#define		THERMOMETER				(0x04)
+
 #define		ONE_BYTE		(1)
+#define		TWO_BYTES		(2)
+#define		SIX_BYTES		(6)
+
 
 
 /* User Bank 0 Registers */
@@ -224,7 +237,27 @@ struct imu_dev
 
 typedef struct{
 	uint8_t gyro;
+	uint16_t accel;
+} imu_sample_rate_t;
+
+typedef struct{
+	uint8_t gyro;
 	uint8_t accel;
 } imu_full_scale_select_t;
+
+typedef struct{
+	uint8_t gyro;
+	uint8_t accel;
+} imu_dplf_t;
+
+typedef struct{
+	uint32_t gyroscope_x;
+	uint32_t gyroscope_y;
+	uint32_t gyroscope_z;
+	uint32_t accelerometer_x;
+	uint32_t accelerometer_y;
+	uint32_t accelerometer_z;
+	uint32_t temperature;
+} imu_sensor_data_t;
 
 #endif /* SRC_IMU_H_ */

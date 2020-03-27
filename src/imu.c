@@ -93,7 +93,6 @@ eIMU_ERRORS icm20948_sleep(struct imu_dev *dev, bool sleep)
 
 	return rslt;
 
-
 }
 
 // Enable/disable low power
@@ -129,10 +128,10 @@ eIMU_ERRORS icm20948_low_power(struct imu_dev *dev, bool low_power)
 }
 
 // Set sampling mode
-eIMU_ERRORS icm20948_sampling_mode(struct imu_dev *dev, uint8_t sensors, uint8_t sample_mode)
+eIMU_ERRORS icm20948_sampling_mode(struct imu_dev *dev, uint8_t sensors, uint8_t sample_mode, imu_sample_rate_t *sample_rate_t)
 {
 	eIMU_ERRORS rslt;
-	uint8_t reg_data[1];
+	uint8_t reg_data[2];
 
 	if(!sensors & (ICM_20948_GYR_CYC_MASK | ICM_20948_ACC_CYC_MASK))
 	{
@@ -157,6 +156,48 @@ eIMU_ERRORS icm20948_sampling_mode(struct imu_dev *dev, uint8_t sensors, uint8_t
 
 	rslt = icm20948_set_regs(LP_CONFIG,reg_data,ONE_BYTE,dev);
 
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	// Set sample rate of in duty-cycled mode
+	if(sample_mode == ICM_20948_CYCLED)
+	{
+		// Change to Bank2 to set sample rate divider
+		rslt = icm20948_set_bank(dev,USER_BANK2);
+
+		if(rslt != eIMUErrorIMUok)
+		{
+			return rslt;
+		}
+
+		if(sensors & ICM_20948_GYR_CYC_MASK)
+		{
+			reg_data[0] = sample_rate_t->gyro;
+
+			rslt = icm20948_set_regs(GYRO_SMPLRT_DIV,reg_data,ONE_BYTE,dev);
+
+			if(rslt != eIMUErrorIMUok)
+			{
+				return rslt;
+			}
+		}
+
+		if(sensors & ICM_20948_ACC_CYC_MASK)
+		{
+			reg_data[0] = 0xFF & sample_rate_t->accel;
+			reg_data[1] = 0xFF & (sample_rate_t->accel >> 8);
+
+			rslt = icm20948_set_regs(ACCEL_SMPLRT_DIV_1,reg_data,TWO_BYTES,dev);
+
+			if(rslt != eIMUErrorIMUok)
+			{
+				return rslt;
+			}
+		}
+	}
+
 	return rslt;
 
 }
@@ -167,7 +208,7 @@ eIMU_ERRORS icm20948_sensor_enable(struct imu_dev *dev, uint8_t sensors, bool en
 	eIMU_ERRORS rslt;
 	uint8_t reg_data[1];
 
-	if(!sensors & (PWR_MGMT_GYR_MASK | PWR_MGMT_ACC_MASK))
+	if(!(sensors & (PWR_MGMT_GYR_MASK | PWR_MGMT_ACC_MASK)))
 	{
 		return eIMUErrorInvalidRange;
 	}
@@ -202,12 +243,12 @@ eIMU_ERRORS icm20948_sensor_enable(struct imu_dev *dev, uint8_t sensors, bool en
 }
 
 // Set scale
-eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_full_scale_select_t fss_t)
+eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_full_scale_select_t *fss_t)
 {
 	eIMU_ERRORS rslt;
 	uint8_t reg_data[1];
 
-	if(!sensors & (GYRO_CONFIG | ACCEL_CONFIG))
+	if(!(sensors & (GYRO_CONFIG | ACCEL_CONFIG)))
 	{
 		return eIMUErrorInvalidRange;
 	}
@@ -222,7 +263,7 @@ eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_ful
 	if(sensors & GYRO_CONFIG)
 	{
 
-		if(fss_t.gyro > GFSS_2000_DPS)
+		if(fss_t->gyro > GFSS_2000_DPS)
 		{
 			return eIMUErrorInvalidRange;
 		}
@@ -234,7 +275,7 @@ eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_ful
 			return rslt;
 		}
 
-		reg_data[0] |= (fss_t.gyro << GFSS_SHIFT);
+		reg_data[0] |= (fss_t->gyro << GFSS_SHIFT);
 
 		rslt = icm20948_set_regs(GYRO_CONFIG_1,reg_data,ONE_BYTE,dev);
 
@@ -248,7 +289,7 @@ eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_ful
 	if(sensors & ACCEL_CONFIG)
 	{
 
-		if(fss_t.accel > AFSS_16_G)
+		if(fss_t->accel > AFSS_16_G)
 		{
 			return eIMUErrorInvalidRange;
 		}
@@ -260,7 +301,7 @@ eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_ful
 			return rslt;
 		}
 
-		reg_data[0] |= (fss_t.accel << AFSS_SHIFT);
+		reg_data[0] |= (fss_t->accel << AFSS_SHIFT);
 
 		rslt = icm20948_set_regs(ACCEL_CONFIG,reg_data,ONE_BYTE,dev);
 
@@ -272,8 +313,124 @@ eIMU_ERRORS icm20948_set_full_scale(struct imu_dev *dev, uint8_t sensors,imu_ful
 
 
 // Set DLPF
+eIMU_ERRORS icm20948_set_dlpf(struct imu_dev *dev, uint8_t sensors, imu_dplf_t *dplf_t, bool enable_dplf)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
+
+	if(!(sensors & (GYRO_CONFIG | ACCEL_CONFIG)))
+	{
+		return eIMUErrorInvalidRange;
+	}
+
+	rslt = icm20948_set_bank(dev,USER_BANK2);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	if(sensors & GYRO_CONFIG)
+	{
+
+		if(dplf_t->gyro > 7)
+		{
+			return eIMUErrorInvalidRange;
+		}
+
+		rslt = icm20948_get_regs(GYRO_CONFIG_1,reg_data,ONE_BYTE,dev);
+
+		if(rslt != eIMUErrorIMUok)
+		{
+			return rslt;
+		}
+
+		reg_data[0] |= (dplf_t->gyro << GDPLF_SHIFT);
+
+		rslt = icm20948_set_regs(GYRO_CONFIG_1,reg_data,ONE_BYTE,dev);
+
+		if(rslt != eIMUErrorIMUok)
+		{
+			return rslt;
+		}
+
+	}
+
+	if(sensors & ACCEL_CONFIG)
+	{
+
+		if(dplf_t->accel > 7)
+		{
+			return eIMUErrorInvalidRange;
+		}
+
+		rslt = icm20948_get_regs(ACCEL_CONFIG,reg_data,ONE_BYTE,dev);
+
+		if(rslt != eIMUErrorIMUok)
+		{
+			return rslt;
+		}
+
+		reg_data[0] |= (dplf_t->accel << ADPLF_SHIFT);
+
+		rslt = icm20948_set_regs(ACCEL_CONFIG,reg_data,ONE_BYTE,dev);
+
+	}
+
+
+	return rslt;
+}
+
+// Set sampling frequency
 
 // Get AGMT data
+eIMU_ERRORS icm20948_get_agmt(struct imu_dev *dev, uint8_t sensors, imu_sensor_data_t *sensor_data)
+{
+
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[6];
+
+	if(!(sensors & (ACCELEROMETER | GYROSCOPE | THERMOMETER)))
+	{
+		return eIMUErrorInvalidRange;
+	}
+
+	rslt = icm20948_set_bank(dev, USER_BANK0);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	if(sensors & ACCELEROMETER)
+	{
+		rslt = icm20948_get_regs(ACCEL_XOUT_H,reg_data,SIX_BYTES,dev);
+
+		//if(rslt != )
+	}
+
+}
+
+eIMU_ERRORS icm20948_parse_sensor_data(uint8_t *reg_data, uint8_t sensors, imu_sensor_data_t *sensor_data)
+{
+	uint8_t shift,count;
+	if(reg_data == NULL | sensor_data == NULL)
+	{
+		return eIMUErrorNullPointer;
+	}
+
+	switch (sensors)
+	{
+		case ACCELEROMETER:
+			//count =
+			break;
+		case GYROSCOPE:
+			break;
+		case THERMOMETER:
+			break;
+	}
+
+}
 
 eIMU_ERRORS icm20948_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint16_t len, const struct imu_dev *dev)
 {
