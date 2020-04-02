@@ -35,6 +35,9 @@
 #define		USER_BANK2		(0x02)
 #define		USER_BANK3		(0x03)
 
+// ICM20948 User Bank 0: USER_CTRL Macros
+#define		ICM_20948_I2C_IF_DIS		(0x10)
+
 // ICM20948 User Bank 0: LP_CONFIG Macros
 #define		ICM_20948_GYR_CYC_MASK		(0x10)
 #define 	ICM_20948_ACC_CYC_MASK		(0x20)
@@ -95,8 +98,8 @@
 #define		GYRO_1000DPS_100X		(3277)
 #define		GYRO_2000DPS_100X		(1638)
 
-#define		ROOM_TEMP_OFFSET_100X	(2100)
-#define		TEMP_SENSITIVITY_100X	(33387)
+#define		ROOM_TEMP_OFFSET		(21)
+#define		TEMP_SENSITIVITY		(334)
 
 #define		TEMP_H					(0)
 #define		TEMP_L					(1)
@@ -256,13 +259,13 @@ typedef struct{
 } imu_dplf_t;
 
 typedef struct{
-	uint32_t gyroscope_x;
-	uint32_t gyroscope_y;
-	uint32_t gyroscope_z;
-	uint32_t accelerometer_x;
-	uint32_t accelerometer_y;
-	uint32_t accelerometer_z;
-	uint32_t temperature;
+	int16_t gyroscope_x;
+	int16_t gyroscope_y;
+	int16_t gyroscope_z;
+	int16_t accelerometer_x;
+	int16_t accelerometer_y;
+	int16_t accelerometer_z;
+	int16_t temperature;
 } imu_sensor_data_t;
 
 /*
@@ -308,6 +311,8 @@ eIMU_ERRORS icm20948_who_am_i(struct imu_dev *dev);
 eIMU_ERRORS icm20948_set_bank(struct imu_dev *dev,uint8_t bank);
 
 eIMU_ERRORS icm20948_sw_reset(struct imu_dev *dev);
+
+eIMU_ERRORS icm20948_spi_enable(struct imu_dev *dev);
 
 eIMU_ERRORS icm20948_sleep(struct imu_dev *dev, bool sleep);
 

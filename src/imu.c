@@ -52,6 +52,30 @@ eIMU_ERRORS icm20948_init(struct imu_dev *dev)
 
 	dev->delay_ms(50);
 
+	// Disable I2C
+	rslt = icm20948_spi_enable(dev);
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	// Disable low power to enable writing to registers
+	rslt = icm20948_low_power(dev, false);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	rslt = icm20948_sleep(dev,false);
+
+	if(rslt != eIMUErrorIMUok)
+	{
+		return rslt;
+	}
+
+	dev->delay_ms(35); // Wait for sensors to come online
+
 	sensors = ACCELEROMETER | GYROSCOPE;
 
 	/* Sensor Scale Initialization */
@@ -68,7 +92,7 @@ eIMU_ERRORS icm20948_init(struct imu_dev *dev)
 
 	/* DPLF Initialization */
 	dev->dplf_settings.accel = 1;
-	dev->dplf_settings.accel = 1;
+	dev->dplf_settings.gyro = 1;
 
 	rslt = icm20948_set_dlpf(dev,sensors,true);
 	/* DPLF Initialization */
@@ -89,23 +113,6 @@ eIMU_ERRORS icm20948_init(struct imu_dev *dev)
 		return rslt;
 	}
 
-	rslt = icm20948_sleep(dev,false);
-
-	if(rslt != eIMUErrorIMUok)
-	{
-		return rslt;
-	}
-
-	dev->delay_ms(35); // Wait for sensors to come online
-
-	rslt = icm20948_low_power(dev, false);
-
-	if(rslt != eIMUErrorIMUok)
-	{
-		return rslt;
-	}
-
-	// Does LP require delay??
 
 	return rslt;
 
@@ -182,6 +189,26 @@ eIMU_ERRORS icm20948_sw_reset(struct imu_dev *dev)
 
 }
 
+eIMU_ERRORS icm20948_spi_enable(struct imu_dev *dev)
+{
+	eIMU_ERRORS rslt;
+	uint8_t reg_data[1];
+
+	rslt = icm20948_set_bank(dev,USER_BANK0);
+
+	if(rslt == eIMUErrorIMUok)
+	{
+			reg_data[0] = ICM_20948_I2C_IF_DIS;
+
+			rslt = icm20948_set_regs(USER_CTRL,reg_data,ONE_BYTE,dev);
+
+			// Delay for
+	}
+
+	return rslt;
+
+}
+
 // Enable/Disable sleep
 eIMU_ERRORS icm20948_sleep(struct imu_dev *dev, bool sleep)
 {
@@ -232,12 +259,12 @@ eIMU_ERRORS icm20948_low_power(struct imu_dev *dev, bool low_power)
 			if(low_power)
 			{
 				reg_data[0] |= PWR_MGMT_LOW_PWR_MASK;
-				rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+				rslt = icm20948_set_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
 			}
 			else
 			{
 				reg_data[0] &= ~PWR_MGMT_LOW_PWR_MASK;
-				rslt = icm20948_get_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
+				rslt = icm20948_set_regs(PWR_MGMT_1,reg_data,ONE_BYTE,dev);
 			}
 		}
 
@@ -573,7 +600,7 @@ eIMU_ERRORS icm20948_get_agmt(struct imu_dev *dev, uint8_t sensors)
 
 eIMU_ERRORS icm20948_parse_sensor_data(struct imu_dev *dev, uint8_t *reg_data, uint8_t sensors)
 {
-	eIMU_ERRORS rslt;
+	eIMU_ERRORS rslt = eIMUErrorIMUok;
 	uint32_t x_axis, y_axis, z_axis, msb, lsb;
 
 	if((reg_data == NULL) | (dev == NULL))
@@ -600,7 +627,7 @@ eIMU_ERRORS icm20948_parse_sensor_data(struct imu_dev *dev, uint8_t *reg_data, u
 	{
 		msb = reg_data[TEMP_H] << 8;
 		lsb = reg_data[TEMP_L];
-		dev->sensor_data.temperature = msb|lsb;
+		dev->sensor_data.temperature = (msb|lsb);
 	}
 
 	if(sensors & ACCELEROMETER)
@@ -617,7 +644,7 @@ eIMU_ERRORS icm20948_parse_sensor_data(struct imu_dev *dev, uint8_t *reg_data, u
 	}
 
 	// Sensor data is scaled up by 100X to avoid floating point calculations
-	rslt = icm20948_compensate_data(dev,sensors);
+	rslt = icm20948_compensate_data(dev,THERMOMETER);
 
 	return rslt;
 
@@ -630,11 +657,11 @@ eIMU_ERRORS icm20948_compensate_data(struct imu_dev *dev,uint8_t sensors)
 	if(sensors & ACCELEROMETER)
 	{
 		scale = dev->full_scale.accel;
-		dev->sensor_data.accelerometer_x *= 100;
+		//dev->sensor_data.accelerometer_x *= 100;
 		dev->sensor_data.accelerometer_x /= dev->full_scale.accel_divisor[scale];
-		dev->sensor_data.accelerometer_y *= 100;
+		//dev->sensor_data.accelerometer_y *= 100;
 		dev->sensor_data.accelerometer_y /= dev->full_scale.accel_divisor[scale];
-		dev->sensor_data.accelerometer_z *= 100;
+		//dev->sensor_data.accelerometer_z *= 100;
 		dev->sensor_data.accelerometer_z /= dev->full_scale.accel_divisor[scale];
 	}
 	else if(sensors & GYROSCOPE)
@@ -649,8 +676,8 @@ eIMU_ERRORS icm20948_compensate_data(struct imu_dev *dev,uint8_t sensors)
 	}
 	else if(sensors & THERMOMETER)
 	{
-		dev->sensor_data.temperature *= 100;
-		dev->sensor_data.temperature = ((dev->sensor_data.temperature - ROOM_TEMP_OFFSET_100X)/TEMP_SENSITIVITY_100X) + ROOM_TEMP_OFFSET_100X;
+		//dev->sensor_data.temperature *= 100;
+		dev->sensor_data.temperature = ((dev->sensor_data.temperature - ROOM_TEMP_OFFSET)/TEMP_SENSITIVITY) + ROOM_TEMP_OFFSET;
 	}
 	else
 	{

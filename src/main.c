@@ -171,7 +171,7 @@ int main(void)
 	  //rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &dev);
 	  //print_sensor_data(&comp_data);
 
-	  delay_ms(200);
+	  delay_ms(500);
 	  rslt = icm20948_get_agmt(&imu_dev,sensors);
 	  LOG_INFO("Accel data - X: %d  Y: %d  Z: %d",imu_dev.sensor_data.accelerometer_x,imu_dev.sensor_data.accelerometer_y,imu_dev.sensor_data.accelerometer_z);
 	  LOG_INFO("Gyro data - X: %d  Y: %d  Z: %d",imu_dev.sensor_data.gyroscope_x,imu_dev.sensor_data.gyroscope_y,imu_dev.sensor_data.gyroscope_y);
