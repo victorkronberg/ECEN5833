@@ -17,7 +17,6 @@ eIMU_ERRORS icm20948_init(struct imu_dev *dev)
 {
 	eIMU_ERRORS rslt;
 	uint8_t sensors;
-
 	rslt = icm20948_null_ptr_check(dev);
 
 	if(rslt != eIMUErrorIMUok)

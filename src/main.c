@@ -62,7 +62,9 @@ int main(void)
 
 	struct bme280_dev dev;
 	struct bme280_data comp_data;
-	int8_t rslt = 0;
+	struct imu_dev imu_dev;
+	eIMU_ERRORS rslt = 0;
+	uint8_t sensors;
 
 	/* Sensor_0 interface over SPI with native chip select line */
 	dev.dev_id = ICM_DEV_ID;
@@ -70,6 +72,12 @@ int main(void)
 	dev.read = &spi_read;
 	dev.write = &spi_write;
 	dev.delay_ms = &delay_ms;
+
+	imu_dev.dev_id = ICM_DEV_ID;
+	imu_dev.read = &spi_read;
+	imu_dev.write = &spi_write;
+	imu_dev.delay_ms = &delay_ms;
+	sensors = ACCELEROMETER | GYROSCOPE | THERMOMETER;
 
 
 
@@ -125,8 +133,6 @@ int main(void)
 
   /* Infinite loop */
 
-  //rslt = bme280_init(&dev);
-
   //rslt = bmp3_init(&bmp_device);
 
   //LOG_INFO("Initilization result: %d", rslt);
@@ -134,18 +140,20 @@ int main(void)
   //bmp388_set_normal_mode(&bmp_device);
 
   //stream_sensor_data_normal_mode(&dev);
-  spi_read(ICM_DEV_ID,WHO_AM_I,reg_data,1);
+  //spi_read(ICM_DEV_ID,WHO_AM_I,reg_data,1);
 
-  spi_read(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
+  //spi_read(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
 
   // Enable Gyro and Accel
-  reg_data[0] = 0;
-  spi_write(ICM_DEV_ID,PWR_MGMT_2,reg_data,1);
+  //reg_data[0] = 0;
+  //spi_write(ICM_DEV_ID,PWR_MGMT_2,reg_data,1);
 
-  reg_data[0] = WAKE_MODE|AUTO_CLK;
+  //reg_data[0] = WAKE_MODE|AUTO_CLK;
 
   // Wake the device
-  spi_write(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
+  //spi_write(ICM_DEV_ID,PWR_MGMT_1,reg_data,1);
+
+  rslt = icm20948_init(&imu_dev);
 
   while (1)
   {
@@ -163,21 +171,12 @@ int main(void)
 	  //rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &dev);
 	  //print_sensor_data(&comp_data);
 
-	  delay_ms(50);
-	  spi_read(ICM_DEV_ID,ACCEL_XOUT_H,reg_data,6);
-	  msb = reg_data[0] << 8;
-	  lsb = reg_data[1];
-	  combined = msb | lsb;
-	  LOG_INFO("X-axis: %d", combined);
-	  msb = reg_data[2] << 8;
-	  lsb = reg_data[3];
-	  combined = msb | lsb;
-	  LOG_INFO("Y-axis: %d", combined);
-	  msb = reg_data[4] << 8;
-	  lsb = reg_data[5];
-	  combined = msb | lsb;
-	  LOG_INFO("Z-axis: %d", combined);
-	  delay_ms(50);
+	  delay_ms(200);
+	  rslt = icm20948_get_agmt(&imu_dev,sensors);
+	  LOG_INFO("Accel data - X: %d  Y: %d  Z: %d",imu_dev.sensor_data.accelerometer_x,imu_dev.sensor_data.accelerometer_y,imu_dev.sensor_data.accelerometer_z);
+	  LOG_INFO("Gyro data - X: %d  Y: %d  Z: %d",imu_dev.sensor_data.gyroscope_x,imu_dev.sensor_data.gyroscope_y,imu_dev.sensor_data.gyroscope_y);
+	  LOG_INFO("Temperature: %d C",imu_dev.sensor_data.temperature);
+	  //delay_ms(20);
 	  //spi_read(ICM_DEV_ID,GYRO_DATA,reg_data,6);
 
 
