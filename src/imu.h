@@ -10,8 +10,8 @@
 
 #include "main.h"
 
-#define 	WHO_AM_I		(0x00)
-#define		WHO_AM_I_ID		(0xEA)
+#define 	WHO_AM_I					(0x00)
+#define		ICM20948_WHO_AM_I_ID		(0xEA)
 
 #define		ICM_ENABLE		(true)
 #define		ICM_DISABLE		(false)
@@ -226,6 +226,7 @@
 /* Error enumerations */
 typedef enum imu_errors {
 	eIMUErrorInvalidRange = -10,
+	eIMUErrorDevNotFound = -2,
 	eIMUErrorNullPointer = -1,
 	eIMUErrorIMUok = 0
 } eIMU_ERRORS;
@@ -301,6 +302,8 @@ struct imu_dev
 
 
 eIMU_ERRORS icm20948_init(struct imu_dev *dev);
+
+eIMU_ERRORS icm20948_who_am_i(struct imu_dev *dev);
 
 eIMU_ERRORS icm20948_set_bank(struct imu_dev *dev,uint8_t bank);
 
